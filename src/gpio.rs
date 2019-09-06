@@ -22,17 +22,39 @@ pub struct PullDown;
 
 pub struct PullUp;
 
-pub struct Output<MODE> {
+pub struct Output<MODE, SPEED> {
     _typestate_mode: PhantomData<MODE>,
+    _typestate_speed: PhantomData<SPEED>,
 }
 
-pub struct Alternate<MODE> {
+pub struct Alternate<MODE, SPEED> {
     _typestate_mode: PhantomData<MODE>,
+    _typestate_speed: PhantomData<SPEED>,
 }
 
 pub struct PushPull;
 
 pub struct OpenDrain;
+
+pub struct UpTo10MHz;
+
+pub struct UpTo2MHz;
+
+pub struct UpTo50MHz;
+
+pub trait Speed {}
+
+impl Speed for UpTo50MHz {}
+
+impl Speed for UpTo10MHz {}
+
+impl Speed for UpTo2MHz {}
+
+pub trait AdjectSpeed {}
+
+impl<MODE, SPEED> AdjectSpeed for Output<MODE, SPEED> {}
+
+impl<MODE, SPEED> AdjectSpeed for Alternate<MODE, SPEED> {}
 
 pub mod gpioa {
     use core::marker::PhantomData;
@@ -61,8 +83,10 @@ pub mod gpioa {
         _typestate_mode: PhantomData<MODE>,
     }
 
-    impl<MODE> PA0<Unlocked, MODE> {
-        pub fn into_open_drain_output(self, ctl0: &mut CTL0) -> PA0<Unlocked, Output<OpenDrain>> {
+    impl<MODE, SPEED> PA0<Unlocked, Output<MODE, SPEED>> {
+        pub fn into_open_drain_output(self, ctl0: &mut CTL0) 
+            -> PA0<Unlocked, Output<OpenDrain, SPEED>> 
+        {
             let offset = 0;
             let ctl_mode = 0b0101;
             //todo: ATOMIC OPERATIONS
