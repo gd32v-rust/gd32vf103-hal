@@ -1,6 +1,5 @@
 use core::marker::PhantomData;
 use core::sync::atomic::{AtomicU32, Ordering};
-// use embedded_hal::digital::v2::{InputPin, OutputPin};
 
 pub trait GpioExt {
     type Parts;
@@ -101,27 +100,35 @@ impl Speed for UpTo2MHz {
 
 #[inline]
 fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
-    let mask = 1 << (index & 31);
+    let mask = 1 << index;
     match is_one {
         true => r.fetch_or(mask, Ordering::SeqCst),
         false => r.fetch_nand(mask, Ordering::SeqCst),
     };
 }
 
+#[inline]
+fn atomic_toggle_bit(r: &AtomicU32, index: usize) {
+    let mask = 1 << index;
+    r.fetch_xor(mask, Ordering::SeqCst);
+}
+
 trait PinIndex {
     const CTL_MD_INDEX: usize;
 
-    const OCTL_LK_INDEX: usize;
+    const OP_LK_INDEX: usize;
 }
 
 pub mod gpioa {
     use super::{
-        Active, Alternate, AlternateMode, Analog, Floating, Input, Locked, OpenDrain, Output,
-        OutputMode, PullDown, PullUp, PushPull, Speed, Unlocked, GpioExt, PinIndex,
+        Active, Alternate, AlternateMode, Analog, Floating, GpioExt, Input, InputMode, Locked,
+        OpenDrain, Output, OutputMode, PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked,
     };
     use crate::pac::{gpioa, GPIOA};
     use core::marker::PhantomData;
     use core::sync::atomic::AtomicU32;
+    use core::convert::Infallible;
+    use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
 
     pub struct Parts {
         pub ctl0: CTL0,
@@ -141,7 +148,10 @@ pub mod gpioa {
                 // ...
                 octl: OCTL { _ownership: () },
                 lock: LOCK { _ownership: () },
-                pa0: PA0 { _typestate_locked: PhantomData, _typestate_mode: PhantomData },
+                pa0: PA0 {
+                    _typestate_locked: PhantomData,
+                    _typestate_mode: PhantomData,
+                },
                 // ...
             }
         }
@@ -185,7 +195,7 @@ pub mod gpioa {
     impl<LOCKED, MODE> PinIndex for PA0<LOCKED, MODE> {
         const CTL_MD_INDEX: usize = 0;
 
-        const OCTL_LK_INDEX: usize = 0;
+        const OP_LK_INDEX: usize = 0;
     }
 
     impl<MODE> PA0<Unlocked, MODE>
@@ -206,7 +216,7 @@ pub mod gpioa {
             octl: &mut OCTL,
         ) -> PA0<Unlocked, Input<PullDown>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
-            super::atomic_set_bit(r, false, Self::OCTL_LK_INDEX);
+            super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
@@ -216,7 +226,7 @@ pub mod gpioa {
             octl: &mut OCTL,
         ) -> PA0<Unlocked, Input<PullUp>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
-            super::atomic_set_bit(r, true, Self::OCTL_LK_INDEX);
+            super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
@@ -268,7 +278,7 @@ pub mod gpioa {
 
         pub fn lock(self, lock: &mut LOCK) -> PA0<Locked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
-            super::atomic_set_bit(r, true, Self::OCTL_LK_INDEX);
+            super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
             PA0 {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
@@ -282,7 +292,7 @@ pub mod gpioa {
     {
         pub fn unlock(self, lock: &mut LOCK) -> PA0<Unlocked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
-            super::atomic_set_bit(r, false, Self::OCTL_LK_INDEX);
+            super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
             PA0 {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
@@ -347,6 +357,70 @@ pub mod gpioa {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
+        }
+    }
+
+    impl<LOCKED, MODE> InputPin for PA0<LOCKED, Input<MODE>>
+    where
+        MODE: InputMode,
+    {
+        type Error = Infallible;
+
+        fn is_high(&self) -> Result<bool, Self::Error> {
+            let ans = (unsafe { &(*GPIOA::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+            Ok(ans)
+        }
+
+        fn is_low(&self) -> Result<bool, Self::Error> {      
+            Ok(!self.is_high()?)
+        }
+    }
+
+    
+    impl<LOCKED, MODE, SPEED> OutputPin for PA0<LOCKED, Output<MODE, SPEED>> 
+    where
+        MODE: OutputMode,
+        SPEED: Speed,
+    {
+        type Error = Infallible;
+
+        fn set_high(&mut self) -> Result<(), Self::Error> {
+            unsafe { &(*GPIOA::ptr()).bop }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            Ok(())
+        }
+
+        fn set_low(&mut self) -> Result<(), Self::Error> {
+            unsafe { &(*GPIOA::ptr()).bc }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            Ok(())
+        }
+    }
+
+    impl<LOCKED, MODE, SPEED> StatefulOutputPin for PA0<LOCKED, Output<MODE, SPEED>>
+    where
+        MODE: OutputMode,
+        SPEED: Speed,
+    {
+        fn is_set_high(&self) -> Result<bool, Self::Error> {
+            let ans = (unsafe { &(*GPIOA::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+            Ok(ans)
+        }
+
+        fn is_set_low(&self) -> Result<bool, Self::Error> {      
+            Ok(!self.is_set_high()?)
+        }
+    }
+    
+    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for PA0<LOCKED, Output<MODE, SPEED>>
+    where
+        MODE: OutputMode,
+        SPEED: Speed,
+    {
+        type Error = Infallible;
+
+        fn toggle(&mut self) -> Result<(), Self::Error> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*GPIOA::ptr()).octl) };
+            super::atomic_toggle_bit(r, Self::OP_LK_INDEX);
+            Ok(())
         }
     }
 

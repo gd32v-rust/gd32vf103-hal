@@ -11,4 +11,4 @@ keywords = ["riscv", "gd32v", "hal", "embedded-hal"]
 
 [dependencies]
 gd32vf103-pac = "0.1"
-embedded-hal = "0.2.3"
+embedded-hal = { version = "0.2.3", features = ["unproven"] }
