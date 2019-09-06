@@ -1,42 +1,55 @@
 use core::marker::PhantomData;
 use core::sync::atomic::{AtomicU32, Ordering};
 
+/// Extension trait to split a GPIO peripheral into independent pins and registers
 pub trait GpioExt {
     type Parts;
 
     fn split(self) -> Self::Parts;
 }
 
+/// Pin is locked (type state)
 pub struct Locked;
 
+/// Pin is not locked (type state)
 pub struct Unlocked;
 
+/// Analog input mode (type state)
 pub struct Analog;
 
+/// Input mode (type state)
 pub struct Input<MODE> {
     _typestate_mode: PhantomData<MODE>,
 }
 
+/// Floating input mode (type state)
 pub struct Floating;
 
+/// Pulled down input mode (type state)
 pub struct PullDown;
 
+/// Pulled up input mode (type state)
 pub struct PullUp;
 
+/// Output mode (type state)
 pub struct Output<MODE, SPEED> {
     _typestate_mode: PhantomData<MODE>,
     _typestate_speed: PhantomData<SPEED>,
 }
 
+/// Alternate mode (type state)
 pub struct Alternate<MODE, SPEED> {
     _typestate_mode: PhantomData<MODE>,
     _typestate_speed: PhantomData<SPEED>,
 }
 
+/// Push-pull output or alternate (type state)
 pub struct PushPull;
 
+/// Open drain output or alternate (type state)
 pub struct OpenDrain;
 
+/// Marker trait for valid input modes
 pub trait InputMode {}
 
 impl InputMode for Floating {}
@@ -45,18 +58,21 @@ impl InputMode for PullDown {}
 
 impl InputMode for PullUp {}
 
+/// Marker trait for valid output modes
 pub trait OutputMode {}
 
 impl OutputMode for PushPull {}
 
 impl OutputMode for OpenDrain {}
 
+/// Marker trait for valid alternate modes
 pub trait AlternateMode {}
 
 impl AlternateMode for PushPull {}
 
 impl AlternateMode for OpenDrain {}
 
+/// Marker trait for active states
 pub trait Active {}
 
 impl Active for Analog {}
@@ -77,12 +93,16 @@ where
 {
 }
 
+/// Output speed up to 10 MHz (type state)
 pub struct UpTo10MHz;
 
+/// Output speed up to 2 MHz (type state)
 pub struct UpTo2MHz;
 
+/// Output speed up to 50 MHz (type state)
 pub struct UpTo50MHz;
 
+/// Marker trait for valid output speed
 pub trait Speed {
     const MD_BITS: u32;
 }
@@ -135,7 +155,7 @@ pub mod gpioa {
         pub ctl0: CTL0,
         //ctl1
         pub octl: OCTL,
-        pub lock: LOCK, // todo: port-A global lock typestate machine
+        pub lock: LOCK, 
         pub pa0: PA0<Unlocked, Input<Floating>>,
         //pa1, ..
     }
@@ -186,9 +206,20 @@ pub mod gpioa {
         pub(crate) fn lock(&mut self) -> &gpioa::LOCK {
             unsafe { &(*GPIOA::ptr()).lock }
         }
-        
-        // todo: change a name?
-        pub fn lock_port(mut self) -> Result<(), LOCK> {
+
+        /// Lock all LK lock bits in this port to prevent furtuer modifications
+        /// on pin modes. 
+        ///
+        /// This operation cannot be undone so it consumes the LOCK ownership
+        /// handle `self`. By the time this function succeeds to execute, the
+        /// program cannot unlock LK bits anymore before chip reset.  
+        ///
+        /// Instead of returning the LOCK back, this function panics on lock failure.
+        /// That's because we consider all lock failures comes from mistakes in
+        /// underlying libraries or chip design which may be not proper for users
+        /// to handle by themselves. If this design results in mistake, please 
+        /// fire an issue to let us know.
+        pub fn lock_all_pins(mut self) {
             let r: &AtomicU32 = unsafe { core::mem::transmute(self.lock()) };
             super::atomic_set_bit(r, true, 16);
             super::atomic_set_bit(r, false, 16);
@@ -196,9 +227,9 @@ pub mod gpioa {
             let ans1 = self.lock().read().bits() & (1 << 16);
             let ans2 = self.lock().read().bits() & (1 << 16);
             if ans1 == 0 && ans2 == 1 {
-                Ok(())
+                return;
             } else {
-                Err(self)
+                panic!("the lock_all_pins process won't succeed")
             }
         }
     }
