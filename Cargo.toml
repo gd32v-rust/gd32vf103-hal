@@ -1,0 +1,14 @@
+[package]
+name = "gd32vf103-hal"
+version = "0.0.0"
+categories = ["embedded", "hardware-support", "no-std"]
+repository = "https://github.com/luojia65/gd32vf103-hal"
+description = "Hardware abstract layer (HAL) for RISC-V microcontroller GD32VF103"
+authors = ["luojia65 <me@luojia.cc>"]
+edition = "2018"
+license-file = "LICENSE"
+keywords = ["riscv", "gd32v", "hal", "embedded-hal"]
+
+[dependencies]
+gd32vf103-pac = "0.1"
+embedded-hal = "0.2.3"
