@@ -1,5 +1,6 @@
 use core::marker::PhantomData;
 use core::sync::atomic::{AtomicU32, Ordering};
+// use embedded_hal::digital::v2::{InputPin, OutputPin};
 
 pub trait GpioExt {
     type Parts;
@@ -110,13 +111,13 @@ fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
 trait PinIndex {
     const CTL_MD_INDEX: usize;
 
-    const OCTL_INDEX: usize;
+    const OCTL_LK_INDEX: usize;
 }
 
 pub mod gpioa {
     use super::{
-        Active, Alternate, AlternateMode, Analog, Floating, Input, OpenDrain, Output, OutputMode,
-        PullDown, PullUp, PushPull, Speed, Unlocked, PinIndex,
+        Active, Alternate, AlternateMode, Analog, Floating, Input, Locked, OpenDrain, Output,
+        OutputMode, PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked,
     };
     use crate::pac::{gpioa, GPIOA};
     use core::marker::PhantomData;
@@ -126,6 +127,7 @@ pub mod gpioa {
         pub ctl0: CTL0,
         //ctl1
         pub octl: OCTL,
+        pub lock: LOCK, // todo: port-A global lock typestate machine
         pub pa0: PA0<Unlocked, Input<Floating>>,
         //pa1, ..
     }
@@ -150,6 +152,16 @@ pub mod gpioa {
         }
     }
 
+    pub struct LOCK {
+        _ownership: (),
+    }
+
+    impl LOCK {
+        pub(crate) fn lock(&mut self) -> &gpioa::LOCK {
+            unsafe { &(*GPIOA::ptr()).lock }
+        }
+    }
+
     pub struct PA0<LOCKED, MODE> {
         _typestate_locked: PhantomData<LOCKED>,
         _typestate_mode: PhantomData<MODE>,
@@ -158,7 +170,7 @@ pub mod gpioa {
     impl<LOCKED, MODE> PinIndex for PA0<LOCKED, MODE> {
         const CTL_MD_INDEX: usize = 0;
 
-        const OCTL_INDEX: usize = 0;
+        const OCTL_LK_INDEX: usize = 0;
     }
 
     impl<MODE> PA0<Unlocked, MODE>
@@ -179,7 +191,7 @@ pub mod gpioa {
             octl: &mut OCTL,
         ) -> PA0<Unlocked, Input<PullDown>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
-            super::atomic_set_bit(r, false, Self::OCTL_INDEX);
+            super::atomic_set_bit(r, false, Self::OCTL_LK_INDEX);
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
@@ -189,7 +201,7 @@ pub mod gpioa {
             octl: &mut OCTL,
         ) -> PA0<Unlocked, Input<PullUp>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
-            super::atomic_set_bit(r, true, Self::OCTL_INDEX); 
+            super::atomic_set_bit(r, true, Self::OCTL_LK_INDEX);
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
@@ -228,8 +240,34 @@ pub mod gpioa {
         #[inline]
         fn into_with_ctrl_md<T>(self, ctl0: &mut CTL0, ctl_and_md: u32) -> PA0<Unlocked, T> {
             ctl0.ctl0().modify(|r, w| unsafe {
-                w.bits((r.bits() & !(0b1111 << Self::CTL_MD_INDEX)) | (ctl_and_md << Self::CTL_MD_INDEX)) 
+                w.bits(
+                    (r.bits() & !(0b1111 << Self::CTL_MD_INDEX))
+                        | (ctl_and_md << Self::CTL_MD_INDEX),
+                )
             });
+            PA0 {
+                _typestate_locked: PhantomData,
+                _typestate_mode: PhantomData,
+            }
+        }
+
+        pub fn lock(self, lock: &mut LOCK) -> PA0<Locked, MODE> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
+            super::atomic_set_bit(r, true, Self::OCTL_LK_INDEX);
+            PA0 {
+                _typestate_locked: PhantomData,
+                _typestate_mode: PhantomData,
+            }
+        }
+    }
+
+    impl<MODE> PA0<Locked, MODE>
+    where
+        MODE: Active,
+    {
+        pub fn unlock(self, lock: &mut LOCK) -> PA0<Unlocked, MODE> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
+            super::atomic_set_bit(r, false, Self::OCTL_LK_INDEX);
             PA0 {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
@@ -247,7 +285,7 @@ pub mod gpioa {
             ctl0: &mut CTL0,
         ) -> PA0<Unlocked, Output<PushPull, SPEED>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(ctl0.ctl0()) };
-            super::atomic_set_bit(r, false, Self::CTL_MD_INDEX); 
+            super::atomic_set_bit(r, false, Self::CTL_MD_INDEX);
             PA0 {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
@@ -259,7 +297,7 @@ pub mod gpioa {
             ctl0: &mut CTL0,
         ) -> PA0<Unlocked, Output<OpenDrain, SPEED>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(ctl0.ctl0()) };
-            super::atomic_set_bit(r, true, Self::CTL_MD_INDEX); 
+            super::atomic_set_bit(r, true, Self::CTL_MD_INDEX);
             PA0 {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
@@ -289,13 +327,12 @@ pub mod gpioa {
             ctl0: &mut CTL0,
         ) -> PA0<Unlocked, Alternate<OpenDrain, SPEED>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(ctl0.ctl0()) };
-            super::atomic_set_bit(r, true, Self::CTL_MD_INDEX); 
+            super::atomic_set_bit(r, true, Self::CTL_MD_INDEX);
             PA0 {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
         }
     }
-
 
 }
