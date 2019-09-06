@@ -1,7 +1,6 @@
 use core::marker::PhantomData;
 
 pub trait GpioExt {
-    
     type Parts;
 
     fn split(self) -> Self::Parts;
@@ -36,6 +35,44 @@ pub struct PushPull;
 
 pub struct OpenDrain;
 
+pub trait InputMode {}
+
+impl InputMode for Analog {}
+
+impl InputMode for Floating {}
+
+impl InputMode for PullDown {}
+
+impl InputMode for PullUp {}
+
+pub trait OutputMode {}
+
+impl OutputMode for PushPull {}
+
+impl OutputMode for OpenDrain {}
+
+pub trait AlternateMode {}
+
+impl AlternateMode for PushPull {}
+
+impl AlternateMode for OpenDrain {}
+
+pub trait Active {}
+
+impl<MODE> Active for Input<MODE> where MODE: InputMode {}
+
+impl<MODE, SPEED> Active for Output<MODE, SPEED>
+where
+    MODE: OutputMode,
+    SPEED: Speed,
+{}
+
+impl<MODE, SPEED> Active for Alternate<MODE, SPEED>
+where
+    MODE: AlternateMode,
+    SPEED: Speed,
+{}
+
 pub struct UpTo10MHz;
 
 pub struct UpTo2MHz;
@@ -51,9 +88,9 @@ impl Speed for UpTo10MHz {}
 impl Speed for UpTo2MHz {}
 
 pub mod gpioa {
+    use super::{Floating, Input, OpenDrain, Output, OutputMode, Speed, Unlocked};
+    use crate::pac::{gpioa, GPIOA};
     use core::marker::PhantomData;
-    use super::{Input, Floating, OpenDrain, Output, Unlocked};
-    use crate::pac::{GPIOA, gpioa};
 
     pub struct Parts {
         pub ctl0: CTL0,
@@ -63,7 +100,7 @@ pub mod gpioa {
     }
 
     pub struct CTL0 {
-        _private: ()
+        _private: (),
     }
 
     impl CTL0 {
@@ -77,17 +114,25 @@ pub mod gpioa {
         _typestate_mode: PhantomData<MODE>,
     }
 
-    impl<MODE, SPEED> PA0<Unlocked, Output<MODE, SPEED>> {
-        pub fn into_open_drain_output(self, ctl0: &mut CTL0) 
-            -> PA0<Unlocked, Output<OpenDrain, SPEED>> 
-        {
+    impl<MODE, SPEED> PA0<Unlocked, Output<MODE, SPEED>>
+    where
+        MODE: OutputMode,
+        SPEED: Speed,
+    {
+        pub fn into_open_drain_output(
+            self,
+            ctl0: &mut CTL0,
+        ) -> PA0<Unlocked, Output<OpenDrain, SPEED>> {
             let offset = 0;
             let ctl_mode = 0b0101;
             //todo: ATOMIC OPERATIONS
             ctl0.ctl0().modify(|r, w| unsafe {
                 w.bits((r.bits() & !(0b1111 << offset)) | (ctl_mode << offset))
             });
-            PA0 { _typestate_locked: PhantomData, _typestate_mode: PhantomData }
+            PA0 {
+                _typestate_locked: PhantomData,
+                _typestate_mode: PhantomData,
+            }
         }
     }
 }
