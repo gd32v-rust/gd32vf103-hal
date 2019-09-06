@@ -11,10 +11,11 @@ pub struct Locked;
 
 pub struct Unlocked;
 
+pub struct Analog;
+
 pub struct Input<MODE> {
     _typestate_mode: PhantomData<MODE>,
 }
-pub struct Analog;
 
 pub struct Floating;
 
@@ -38,8 +39,6 @@ pub struct OpenDrain;
 
 pub trait InputMode {}
 
-impl InputMode for Analog {}
-
 impl InputMode for Floating {}
 
 impl InputMode for PullDown {}
@@ -59,6 +58,8 @@ impl AlternateMode for PushPull {}
 impl AlternateMode for OpenDrain {}
 
 pub trait Active {}
+
+impl Active for Analog {}
 
 impl<MODE> Active for Input<MODE> where MODE: InputMode {}
 
@@ -202,7 +203,7 @@ pub mod gpioa {
     where
         MODE: Active,
     {
-        pub fn into_analog_input(self, ctl0: &mut CTL0) -> PA0<Unlocked, Input<Analog>> {
+        pub fn into_analog(self, ctl0: &mut CTL0) -> PA0<Unlocked, Analog> {
             self.into_with_ctrl_md(ctl0, 0b00_00)
         }
 
@@ -395,9 +396,43 @@ pub mod gpioa {
         }
     }
 
+    impl<LOCKED, MODE, SPEED> OutputPin for PA0<LOCKED, Alternate<MODE, SPEED>>
+    where
+        MODE: AlternateMode,
+        SPEED: Speed,
+    {
+        type Error = Infallible;
+
+        fn set_high(&mut self) -> Result<(), Self::Error> {
+            unsafe { &(*GPIOA::ptr()).bop }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            Ok(())
+        }
+
+        fn set_low(&mut self) -> Result<(), Self::Error> {
+            unsafe { &(*GPIOA::ptr()).bc }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            Ok(())
+        }
+    }
+
     impl<LOCKED, MODE, SPEED> StatefulOutputPin for PA0<LOCKED, Output<MODE, SPEED>>
     where
         MODE: OutputMode,
+        SPEED: Speed,
+    {
+        fn is_set_high(&self) -> Result<bool, Self::Error> {
+            let ans =
+                (unsafe { &(*GPIOA::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+            Ok(ans)
+        }
+
+        fn is_set_low(&self) -> Result<bool, Self::Error> {
+            Ok(!self.is_set_high()?)
+        }
+    }
+
+    impl<LOCKED, MODE, SPEED> StatefulOutputPin for PA0<LOCKED, Alternate<MODE, SPEED>>
+    where
+        MODE: AlternateMode,
         SPEED: Speed,
     {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
@@ -422,6 +457,37 @@ pub mod gpioa {
             let r: &AtomicU32 = unsafe { core::mem::transmute(&(*GPIOA::ptr()).octl) };
             super::atomic_toggle_bit(r, Self::OP_LK_INDEX);
             Ok(())
+        }
+    }
+
+    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for PA0<LOCKED, Alternate<MODE, SPEED>>
+    where
+        MODE: AlternateMode,
+        SPEED: Speed,
+    {
+        type Error = Infallible;
+
+        fn toggle(&mut self) -> Result<(), Self::Error> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*GPIOA::ptr()).octl) };
+            super::atomic_toggle_bit(r, Self::OP_LK_INDEX);
+            Ok(())
+        }
+    }
+
+    impl<LOCKED, SPEED> InputPin for PA0<LOCKED, Output<OpenDrain, SPEED>>
+    where
+        SPEED: Speed,
+    {
+        type Error = Infallible;
+
+        fn is_high(&self) -> Result<bool, Self::Error> {
+            let ans =
+                (unsafe { &(*GPIOA::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+            Ok(ans)
+        }
+
+        fn is_low(&self) -> Result<bool, Self::Error> {
+            Ok(!self.is_high()?)
         }
     }
 
