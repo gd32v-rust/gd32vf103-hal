@@ -221,7 +221,7 @@ pub mod gpioa {
             self,
             ctl0: &mut CTL0,
         ) -> PA0<Unlocked, Alternate<OpenDrain, SPEED>> {
-            let ctrl_md = 011_00 | SPEED::MD_BITS;
+            let ctrl_md = 0b11_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md(ctl0, ctrl_md)
         }
 
