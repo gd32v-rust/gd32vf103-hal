@@ -186,6 +186,21 @@ pub mod gpioa {
         pub(crate) fn lock(&mut self) -> &gpioa::LOCK {
             unsafe { &(*GPIOA::ptr()).lock }
         }
+        
+        // todo: change a name?
+        pub fn lock_port(mut self) -> Result<(), LOCK> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute(self.lock()) };
+            super::atomic_set_bit(r, true, 16);
+            super::atomic_set_bit(r, false, 16);
+            super::atomic_set_bit(r, true, 16);
+            let ans1 = self.lock().read().bits() & (1 << 16);
+            let ans2 = self.lock().read().bits() & (1 << 16);
+            if ans1 == 0 && ans2 == 1 {
+                Ok(())
+            } else {
+                Err(self)
+            }
+        }
     }
 
     pub struct PA0<LOCKED, MODE> {
