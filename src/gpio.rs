@@ -117,7 +117,7 @@ trait PinIndex {
 pub mod gpioa {
     use super::{
         Active, Alternate, AlternateMode, Analog, Floating, Input, Locked, OpenDrain, Output,
-        OutputMode, PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked,
+        OutputMode, PullDown, PullUp, PushPull, Speed, Unlocked, GpioExt, PinIndex,
     };
     use crate::pac::{gpioa, GPIOA};
     use core::marker::PhantomData;
@@ -130,6 +130,21 @@ pub mod gpioa {
         pub lock: LOCK, // todo: port-A global lock typestate machine
         pub pa0: PA0<Unlocked, Input<Floating>>,
         //pa1, ..
+    }
+
+    impl GpioExt for GPIOA {
+        type Parts = Parts;
+
+        fn split(self) -> Self::Parts {
+            Parts {
+                ctl0: CTL0 { _ownership: () },
+                // ...
+                octl: OCTL { _ownership: () },
+                lock: LOCK { _ownership: () },
+                pa0: PA0 { _typestate_locked: PhantomData, _typestate_mode: PhantomData },
+                // ...
+            }
+        }
     }
 
     pub struct CTL0 {
