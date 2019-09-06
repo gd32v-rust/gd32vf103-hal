@@ -66,13 +66,15 @@ impl<MODE, SPEED> Active for Output<MODE, SPEED>
 where
     MODE: OutputMode,
     SPEED: Speed,
-{}
+{
+}
 
 impl<MODE, SPEED> Active for Alternate<MODE, SPEED>
 where
     MODE: AlternateMode,
     SPEED: Speed,
-{}
+{
+}
 
 pub struct UpTo10MHz;
 
@@ -106,9 +108,10 @@ fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
 }
 
 pub mod gpioa {
-    use super::{Input, Floating, Analog, PullDown, PullUp,
-            Output, OutputMode, OpenDrain, PushPull,
-            Alternate, AlternateMode, Active, Speed, Unlocked};
+    use super::{
+        Active, Alternate, AlternateMode, Analog, Floating, Input, OpenDrain, Output, OutputMode,
+        PullDown, PullUp, PushPull, Speed, Unlocked,
+    };
     use crate::pac::{gpioa, GPIOA};
     use core::marker::PhantomData;
     use core::sync::atomic::AtomicU32;
@@ -153,21 +156,61 @@ pub mod gpioa {
         pub fn into_analog_input(self, ctl0: &mut CTL0) -> PA0<Unlocked, Input<Analog>> {
             self.into_with_ctrl_md(ctl0, 0b00_00)
         }
-        
+
         pub fn into_floating_input(self, ctl0: &mut CTL0) -> PA0<Unlocked, Input<Floating>> {
             self.into_with_ctrl_md(ctl0, 0b01_00)
         }
 
-        pub fn into_pull_down_input(self, ctl0: &mut CTL0, octl: &mut OCTL) -> PA0<Unlocked, Input<PullDown>> {
+        pub fn into_pull_down_input(
+            self,
+            ctl0: &mut CTL0,
+            octl: &mut OCTL,
+        ) -> PA0<Unlocked, Input<PullDown>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, false, 0); //
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
-        pub fn into_pull_up_input(self, ctl0: &mut CTL0, octl: &mut OCTL) -> PA0<Unlocked, Input<PullUp>> {
+        pub fn into_pull_up_input(
+            self,
+            ctl0: &mut CTL0,
+            octl: &mut OCTL,
+        ) -> PA0<Unlocked, Input<PullUp>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, true, 0); //
             self.into_with_ctrl_md(ctl0, 0b10_00)
+        }
+
+        pub fn into_push_pull_output_speed<SPEED: Speed>(
+            self,
+            ctl0: &mut CTL0,
+        ) -> PA0<Unlocked, Output<PushPull, SPEED>> {
+            let ctrl_md = 0b00_00 | SPEED::MD_BITS;
+            self.into_with_ctrl_md(ctl0, ctrl_md)
+        }
+
+        pub fn into_open_drain_output_speed<SPEED: Speed>(
+            self,
+            ctl0: &mut CTL0,
+        ) -> PA0<Unlocked, Output<OpenDrain, SPEED>> {
+            let ctrl_md = 0b01_00 | SPEED::MD_BITS;
+            self.into_with_ctrl_md(ctl0, ctrl_md)
+        }
+
+        pub fn into_push_pull_alternate_speed<SPEED: Speed>(
+            self,
+            ctl0: &mut CTL0,
+        ) -> PA0<Unlocked, Alternate<PushPull, SPEED>> {
+            let ctrl_md = 0b10_00 | SPEED::MD_BITS;
+            self.into_with_ctrl_md(ctl0, ctrl_md)
+        }
+
+        pub fn into_open_drain_alternate_speed<SPEED: Speed>(
+            self,
+            ctl0: &mut CTL0,
+        ) -> PA0<Unlocked, Alternate<OpenDrain, SPEED>> {
+            let ctrl_md = 011_00 | SPEED::MD_BITS;
+            self.into_with_ctrl_md(ctl0, ctrl_md)
         }
 
         #[inline]
@@ -180,8 +223,6 @@ pub mod gpioa {
                 _typestate_mode: PhantomData,
             }
         }
-        
-
     }
 
     impl<MODE, SPEED> PA0<Unlocked, Output<MODE, SPEED>>
@@ -213,7 +254,7 @@ pub mod gpioa {
             }
         }
     }
-    
+
     impl<MODE, SPEED> PA0<Unlocked, Alternate<MODE, SPEED>>
     where
         MODE: AlternateMode,
@@ -243,4 +284,6 @@ pub mod gpioa {
             }
         }
     }
+
+    
 }
