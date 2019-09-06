@@ -79,13 +79,21 @@ pub struct UpTo2MHz;
 
 pub struct UpTo50MHz;
 
-pub trait Speed {}
+pub trait Speed {
+    const MD_BITS: u32;
+}
 
-impl Speed for UpTo50MHz {}
+impl Speed for UpTo50MHz {
+    const MD_BITS: u32 = 0b11;
+}
 
-impl Speed for UpTo10MHz {}
+impl Speed for UpTo10MHz {
+    const MD_BITS: u32 = 0b01;
+}
 
-impl Speed for UpTo2MHz {}
+impl Speed for UpTo2MHz {
+    const MD_BITS: u32 = 0b10;
+}
 
 pub mod gpioa {
     use super::{Floating, Input, OpenDrain, Output, OutputMode, Speed, Unlocked};
@@ -124,10 +132,10 @@ pub mod gpioa {
             ctl0: &mut CTL0,
         ) -> PA0<Unlocked, Output<OpenDrain, SPEED>> {
             let offset = 0;
-            let ctl_mode = 0b0101;
+            let ctl_and_md = 0b01 | (SPEED::MD_BITS << 2);
             //todo: ATOMIC OPERATIONS
             ctl0.ctl0().modify(|r, w| unsafe {
-                w.bits((r.bits() & !(0b1111 << offset)) | (ctl_mode << offset))
+                w.bits((r.bits() & !(0b1111 << offset)) | (ctl_and_md << offset))
             });
             PA0 {
                 _typestate_locked: PhantomData,
