@@ -125,9 +125,9 @@ pub mod gpioa {
         OpenDrain, Output, OutputMode, PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked,
     };
     use crate::pac::{gpioa, GPIOA};
+    use core::convert::Infallible;
     use core::marker::PhantomData;
     use core::sync::atomic::AtomicU32;
-    use core::convert::Infallible;
     use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
 
     pub struct Parts {
@@ -367,17 +367,17 @@ pub mod gpioa {
         type Error = Infallible;
 
         fn is_high(&self) -> Result<bool, Self::Error> {
-            let ans = (unsafe { &(*GPIOA::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+            let ans =
+                (unsafe { &(*GPIOA::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
             Ok(ans)
         }
 
-        fn is_low(&self) -> Result<bool, Self::Error> {      
+        fn is_low(&self) -> Result<bool, Self::Error> {
             Ok(!self.is_high()?)
         }
     }
 
-    
-    impl<LOCKED, MODE, SPEED> OutputPin for PA0<LOCKED, Output<MODE, SPEED>> 
+    impl<LOCKED, MODE, SPEED> OutputPin for PA0<LOCKED, Output<MODE, SPEED>>
     where
         MODE: OutputMode,
         SPEED: Speed,
@@ -401,15 +401,16 @@ pub mod gpioa {
         SPEED: Speed,
     {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
-            let ans = (unsafe { &(*GPIOA::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+            let ans =
+                (unsafe { &(*GPIOA::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
             Ok(ans)
         }
 
-        fn is_set_low(&self) -> Result<bool, Self::Error> {      
+        fn is_set_low(&self) -> Result<bool, Self::Error> {
             Ok(!self.is_set_high()?)
         }
     }
-    
+
     impl<LOCKED, MODE, SPEED> ToggleableOutputPin for PA0<LOCKED, Output<MODE, SPEED>>
     where
         MODE: OutputMode,
