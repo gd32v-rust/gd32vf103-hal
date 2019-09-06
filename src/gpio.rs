@@ -106,7 +106,7 @@ fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
 }
 
 pub mod gpioa {
-    use super::{Input, Floating, Analog,  
+    use super::{Input, Floating, Analog, PullDown, PullUp,
             Output, OutputMode, OpenDrain, PushPull,
             Alternate, AlternateMode, Active, Speed, Unlocked};
     use crate::pac::{gpioa, GPIOA};
@@ -158,13 +158,13 @@ pub mod gpioa {
             self.into_with_ctrl_md(ctl0, 0b01_00)
         }
 
-        pub fn into_pull_down_input(self, ctl0: &mut CTL0, octl: &mut OCTL) -> PA0<Unlocked, Input<Floating>> {
+        pub fn into_pull_down_input(self, ctl0: &mut CTL0, octl: &mut OCTL) -> PA0<Unlocked, Input<PullDown>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, false, 0); //
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
-        pub fn into_pull_up_input(self, ctl0: &mut CTL0, octl: &mut OCTL) -> PA0<Unlocked, Input<Floating>> {
+        pub fn into_pull_up_input(self, ctl0: &mut CTL0, octl: &mut OCTL) -> PA0<Unlocked, Input<PullUp>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, true, 0); //
             self.into_with_ctrl_md(ctl0, 0b10_00)
@@ -181,7 +181,7 @@ pub mod gpioa {
             }
         }
         
-        
+
     }
 
     impl<MODE, SPEED> PA0<Unlocked, Output<MODE, SPEED>>
