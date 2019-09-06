@@ -50,12 +50,6 @@ impl Speed for UpTo10MHz {}
 
 impl Speed for UpTo2MHz {}
 
-pub trait AdjectSpeed {}
-
-impl<MODE, SPEED> AdjectSpeed for Output<MODE, SPEED> {}
-
-impl<MODE, SPEED> AdjectSpeed for Alternate<MODE, SPEED> {}
-
 pub mod gpioa {
     use core::marker::PhantomData;
     use super::{Input, Floating, OpenDrain, Output, Unlocked};
