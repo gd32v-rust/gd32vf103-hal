@@ -10,5 +10,7 @@ pub mod spi;
 
 /// Prelude
 pub mod prelude {
+    pub use embedded_hal::prelude::*;
+    pub use crate::gpio::{UpTo2MHz, UpTo10MHz, UpTo50MHz};
     pub use crate::gpio::GpioExt as _gd32vf103_hal_gpio_GpioExt;
 }
