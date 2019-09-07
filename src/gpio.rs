@@ -1,12 +1,14 @@
-//!	General Purpose Input / Output
+//! General Purpose Input / Output
 
 use core::marker::PhantomData;
 use core::sync::atomic::{AtomicU32, Ordering};
 
 /// Extension trait to split a GPIO peripheral into independent pins and registers
 pub trait GpioExt {
+    /// The type to split the GPIO into
     type Parts;
-
+    
+    /// Splits the GPIO block into independent pins and registers
     fn split(self) -> Self::Parts;
 }
 
@@ -106,6 +108,7 @@ pub struct UpTo50MHz;
 
 /// Marker trait for valid output speed
 pub trait Speed {
+    /// The MD[1:0] bits this speed is represented into
     const MD_BITS: u32;
 }
 
@@ -160,11 +163,16 @@ pub mod $gpiox {
 
     /// GPIO parts
     pub struct Parts {
+        /// Opaque CTL0 register
         pub ctl0: CTL0,
+        /// Opaque CTL1 register
         pub ctl1: CTL1,
+        /// Opaque OCTL register
         pub octl: OCTL,
+        /// Opaque LOCK register
         pub lock: LOCK, 
         $(
+            /// Pin
             pub $pxi: $PXi<Unlocked, $MODE>,
         )+
     }
