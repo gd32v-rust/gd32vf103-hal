@@ -108,7 +108,7 @@ pub struct UpTo50MHz;
 
 /// Marker trait for valid output speed
 pub trait Speed {
-    /// The MD[1:0] bits this speed is represented into
+    /// The MD\[1:0\] bits this speed is represented into
     const MD_BITS: u32;
 }
 
