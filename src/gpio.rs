@@ -142,13 +142,17 @@ trait PinIndex {
     const OP_LK_INDEX: usize;
 }
 
+macro_rules! impl_gpio {
+    ($GPIOX:ident,$gpiox:ident,$gpioy:ident, [
+        $($PXi:ident:($pxi:ident,$i_ctl:expr,$i_op:expr,$MODE:ty,$CTL:ident,$ctl:ident),)+
+    ]) => {
 /// GPIO port
-pub mod gpioa {
+pub mod $gpiox {
     use super::{
         Active, Alternate, AlternateMode, Analog, Floating, GpioExt, Input, InputMode, Locked,
         OpenDrain, Output, OutputMode, PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked,
     };
-    use crate::pac::{gpioa, GPIOA};
+    use crate::pac::{$gpioy, $GPIOX};
     use core::convert::Infallible;
     use core::marker::PhantomData;
     use core::sync::atomic::AtomicU32;
@@ -157,26 +161,29 @@ pub mod gpioa {
     /// GPIO parts
     pub struct Parts {
         pub ctl0: CTL0,
-        //ctl1
+        pub ctl1: CTL1,
         pub octl: OCTL,
         pub lock: LOCK, 
-        pub pa0: PA0<Unlocked, Input<Floating>>,
-        //pa1, ..
+        $(
+            pub $pxi: $PXi<Unlocked, $MODE>,
+        )+
     }
 
-    impl GpioExt for GPIOA {
+    impl GpioExt for $GPIOX {
         type Parts = Parts;
 
         fn split(self) -> Self::Parts {
             Parts {
                 ctl0: CTL0 { _ownership: () },
-                // ...
+                ctl1: CTL1 { _ownership: () },
                 octl: OCTL { _ownership: () },
                 lock: LOCK { _ownership: () },
-                pa0: PA0 {
-                    _typestate_locked: PhantomData,
-                    _typestate_mode: PhantomData,
-                },
+                $(
+                    $pxi: $PXi {
+                        _typestate_locked: PhantomData,
+                        _typestate_mode: PhantomData,
+                    },
+                )+
                 // ...
             }
         }
@@ -188,8 +195,19 @@ pub mod gpioa {
     }
 
     impl CTL0 {
-        pub(crate) fn ctl0(&mut self) -> &gpioa::CTL0 {
-            unsafe { &(*GPIOA::ptr()).ctl0 }
+        pub(crate) fn ctl0(&mut self) -> &$gpioy::CTL0 {
+            unsafe { &(*$GPIOX::ptr()).ctl0 }
+        }
+    }
+
+    /// Opaque CTL1 register
+    pub struct CTL1 {
+        _ownership: (),
+    }
+
+    impl CTL1 {
+        pub(crate) fn ctl1(&mut self) -> &$gpioy::CTL1 {
+            unsafe { &(*$GPIOX::ptr()).ctl1 }
         }
     }
 
@@ -199,8 +217,8 @@ pub mod gpioa {
     }
 
     impl OCTL {
-        pub(crate) fn octl(&mut self) -> &gpioa::OCTL {
-            unsafe { &(*GPIOA::ptr()).octl }
+        pub(crate) fn octl(&mut self) -> &$gpioy::OCTL {
+            unsafe { &(*$GPIOX::ptr()).octl }
         }
     }
 
@@ -210,8 +228,8 @@ pub mod gpioa {
     }
 
     impl LOCK {
-        pub(crate) fn lock(&mut self) -> &gpioa::LOCK {
-            unsafe { &(*GPIOA::ptr()).lock }
+        pub(crate) fn lock(&mut self) -> &$gpioy::LOCK {
+            unsafe { &(*$GPIOX::ptr()).lock }
         }
 
         /// Lock all LK lock bits in this GPIO port to prevent furtuer modifications
@@ -240,100 +258,100 @@ pub mod gpioa {
             }
         }
     }
-
+$(
     /// Pin
-    pub struct PA0<LOCKED, MODE> {
+    pub struct $PXi<LOCKED, MODE> {
         _typestate_locked: PhantomData<LOCKED>,
         _typestate_mode: PhantomData<MODE>,
     }
 
-    impl<LOCKED, MODE> PinIndex for PA0<LOCKED, MODE> {
-        const CTL_MD_INDEX: usize = 0;
+    impl<LOCKED, MODE> PinIndex for $PXi<LOCKED, MODE> {
+        const CTL_MD_INDEX: usize = $i_ctl;
 
-        const OP_LK_INDEX: usize = 0;
+        const OP_LK_INDEX: usize = $i_op;
     }
 
-    impl<MODE> PA0<Unlocked, MODE>
+    impl<MODE> $PXi<Unlocked, MODE>
     where
         MODE: Active,
     {
         /// Configures the pin to serve as an analog input pin.
-        pub fn into_analog(self, ctl0: &mut CTL0) -> PA0<Unlocked, Analog> {
-            self.into_with_ctrl_md(ctl0, 0b00_00)
+        pub fn into_analog(self, $ctl: &mut $CTL) -> $PXi<Unlocked, Analog> {
+            self.into_with_ctrl_md($ctl, 0b00_00)
         }
 
         /// Configures the pin to serve as a floating input pin.
-        pub fn into_floating_input(self, ctl0: &mut CTL0) -> PA0<Unlocked, Input<Floating>> {
-            self.into_with_ctrl_md(ctl0, 0b01_00)
+        pub fn into_floating_input(self, $ctl: &mut $CTL) -> $PXi<Unlocked, Input<Floating>> {
+            self.into_with_ctrl_md($ctl, 0b01_00)
         }
 
         /// Configures the pin to serve as a pull down input pin.
         pub fn into_pull_down_input(
             self,
-            ctl0: &mut CTL0,
+            $ctl: &mut $CTL,
             octl: &mut OCTL,
-        ) -> PA0<Unlocked, Input<PullDown>> {
+        ) -> $PXi<Unlocked, Input<PullDown>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
-            self.into_with_ctrl_md(ctl0, 0b10_00)
+            self.into_with_ctrl_md($ctl, 0b10_00)
         }
 
         /// Configures the pin to serve as a pull up input pin.
         pub fn into_pull_up_input(
             self,
-            ctl0: &mut CTL0,
+            $ctl: &mut $CTL,
             octl: &mut OCTL,
-        ) -> PA0<Unlocked, Input<PullUp>> {
+        ) -> $PXi<Unlocked, Input<PullUp>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
-            self.into_with_ctrl_md(ctl0, 0b10_00)
+            self.into_with_ctrl_md($ctl, 0b10_00)
         }
 
         /// Configures the pin to serve as a push pull output pin with maximum speed given.
         pub fn into_push_pull_output_speed<SPEED: Speed>(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Output<PushPull, SPEED>> {
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Output<PushPull, SPEED>> {
             let ctrl_md = 0b00_00 | SPEED::MD_BITS;
-            self.into_with_ctrl_md(ctl0, ctrl_md)
+            self.into_with_ctrl_md($ctl, ctrl_md)
         }
 
         /// Configures the pin to serve as an open drain output pin with maximum speed given.
         pub fn into_open_drain_output_speed<SPEED: Speed>(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Output<OpenDrain, SPEED>> {
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Output<OpenDrain, SPEED>> {
             let ctrl_md = 0b01_00 | SPEED::MD_BITS;
-            self.into_with_ctrl_md(ctl0, ctrl_md)
+            self.into_with_ctrl_md($ctl, ctrl_md)
         }
 
         /// Configures the pin to serve as a push pull alternate pin with maximum speed given
         pub fn into_push_pull_alternate_speed<SPEED: Speed>(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Alternate<PushPull, SPEED>> {
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Alternate<PushPull, SPEED>> {
             let ctrl_md = 0b10_00 | SPEED::MD_BITS;
-            self.into_with_ctrl_md(ctl0, ctrl_md)
+            self.into_with_ctrl_md($ctl, ctrl_md)
         }
 
         /// Configures the pin to serve as an open drain alternate pin with maximum speed given.
         pub fn into_open_drain_alternate_speed<SPEED: Speed>(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Alternate<OpenDrain, SPEED>> {
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Alternate<OpenDrain, SPEED>> {
             let ctrl_md = 0b11_00 | SPEED::MD_BITS;
-            self.into_with_ctrl_md(ctl0, ctrl_md)
+            self.into_with_ctrl_md($ctl, ctrl_md)
         }
 
         #[inline]
-        fn into_with_ctrl_md<T>(self, ctl0: &mut CTL0, ctl_and_md: u32) -> PA0<Unlocked, T> {
-            ctl0.ctl0().modify(|r, w| unsafe {
+        fn into_with_ctrl_md<T>(self, $ctl: &mut $CTL, ctl_and_md: u32) -> $PXi<Unlocked, T> {
+            $ctl.$ctl().modify(|r, w| unsafe {
                 w.bits(
                     (r.bits() & !(0b1111 << Self::CTL_MD_INDEX))
                         | (ctl_and_md << Self::CTL_MD_INDEX),
                 )
             });
-            PA0 {
+            $PXi {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
@@ -345,17 +363,17 @@ pub mod gpioa {
         /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
         /// but it will not be possible if `lock_all_pins` method of LOCK struct was 
         /// called; see its documentation for details.
-        pub fn lock(self, lock: &mut LOCK) -> PA0<Locked, MODE> {
+        pub fn lock(self, lock: &mut LOCK) -> $PXi<Locked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
-            PA0 {
+            $PXi {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
         }
     }
 
-    impl<MODE> PA0<Locked, MODE>
+    impl<MODE> $PXi<Locked, MODE>
     where
         MODE: Active,
     {
@@ -367,17 +385,17 @@ pub mod gpioa {
         /// `lock_all_pins` method of that struct, you would be no longer possible 
         /// to change lock state or unlock any locked pins - see its documentation
         ///  for details.
-        pub fn unlock(self, lock: &mut LOCK) -> PA0<Unlocked, MODE> {
+        pub fn unlock(self, lock: &mut LOCK) -> $PXi<Unlocked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
             super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
-            PA0 {
+            $PXi {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
         }
     }
 
-    impl<MODE, SPEED> PA0<Unlocked, Output<MODE, SPEED>>
+    impl<MODE, SPEED> $PXi<Unlocked, Output<MODE, SPEED>>
     where
         MODE: OutputMode,
         SPEED: Speed,
@@ -386,11 +404,11 @@ pub mod gpioa {
         /// the maximum output speed is not changed.
         pub fn into_push_pull_output(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Output<PushPull, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(ctl0.ctl0()) };
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Output<PushPull, SPEED>> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
             super::atomic_set_bit(r, false, Self::CTL_MD_INDEX);
-            PA0 {
+            $PXi {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
@@ -400,18 +418,18 @@ pub mod gpioa {
         /// the maximum output speed is not changed.
         pub fn into_open_drain_output(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Output<OpenDrain, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(ctl0.ctl0()) };
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Output<OpenDrain, SPEED>> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
             super::atomic_set_bit(r, true, Self::CTL_MD_INDEX);
-            PA0 {
+            $PXi {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
         }
     }
 
-    impl<MODE, SPEED> PA0<Unlocked, Alternate<MODE, SPEED>>
+    impl<MODE, SPEED> $PXi<Unlocked, Alternate<MODE, SPEED>>
     where
         MODE: AlternateMode,
         SPEED: Speed,
@@ -420,11 +438,11 @@ pub mod gpioa {
         /// the maximum output speed is not changed.
         pub fn into_push_pull_alternate(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Alternate<PushPull, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(ctl0.ctl0()) };
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Alternate<PushPull, SPEED>> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
             super::atomic_set_bit(r, false, Self::CTL_MD_INDEX);
-            PA0 {
+            $PXi {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
@@ -434,18 +452,18 @@ pub mod gpioa {
         /// the maximum output speed is not changed.
         pub fn into_open_drain_alternate(
             self,
-            ctl0: &mut CTL0,
-        ) -> PA0<Unlocked, Alternate<OpenDrain, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(ctl0.ctl0()) };
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Alternate<OpenDrain, SPEED>> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
             super::atomic_set_bit(r, true, Self::CTL_MD_INDEX);
-            PA0 {
+            $PXi {
                 _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
         }
     }
 
-    impl<LOCKED, MODE> InputPin for PA0<LOCKED, Input<MODE>>
+    impl<LOCKED, MODE> InputPin for $PXi<LOCKED, Input<MODE>>
     where
         MODE: InputMode,
     {
@@ -453,7 +471,7 @@ pub mod gpioa {
 
         fn is_high(&self) -> Result<bool, Self::Error> {
             let ans =
-                (unsafe { &(*GPIOA::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+                (unsafe { &(*$GPIOX::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
             Ok(ans)
         }
 
@@ -462,7 +480,7 @@ pub mod gpioa {
         }
     }
 
-    impl<LOCKED, MODE, SPEED> OutputPin for PA0<LOCKED, Output<MODE, SPEED>>
+    impl<LOCKED, MODE, SPEED> OutputPin for $PXi<LOCKED, Output<MODE, SPEED>>
     where
         MODE: OutputMode,
         SPEED: Speed,
@@ -470,17 +488,17 @@ pub mod gpioa {
         type Error = Infallible;
 
         fn set_high(&mut self) -> Result<(), Self::Error> {
-            unsafe { &(*GPIOA::ptr()).bop }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            unsafe { &(*$GPIOX::ptr()).bop }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
             Ok(())
         }
 
         fn set_low(&mut self) -> Result<(), Self::Error> {
-            unsafe { &(*GPIOA::ptr()).bc }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            unsafe { &(*$GPIOX::ptr()).bc }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
             Ok(())
         }
     }
 
-    impl<LOCKED, MODE, SPEED> OutputPin for PA0<LOCKED, Alternate<MODE, SPEED>>
+    impl<LOCKED, MODE, SPEED> OutputPin for $PXi<LOCKED, Alternate<MODE, SPEED>>
     where
         MODE: AlternateMode,
         SPEED: Speed,
@@ -488,24 +506,24 @@ pub mod gpioa {
         type Error = Infallible;
 
         fn set_high(&mut self) -> Result<(), Self::Error> {
-            unsafe { &(*GPIOA::ptr()).bop }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            unsafe { &(*$GPIOX::ptr()).bop }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
             Ok(())
         }
 
         fn set_low(&mut self) -> Result<(), Self::Error> {
-            unsafe { &(*GPIOA::ptr()).bc }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
+            unsafe { &(*$GPIOX::ptr()).bc }.write(|w| unsafe { w.bits(1 << Self::OP_LK_INDEX) });
             Ok(())
         }
     }
 
-    impl<LOCKED, MODE, SPEED> StatefulOutputPin for PA0<LOCKED, Output<MODE, SPEED>>
+    impl<LOCKED, MODE, SPEED> StatefulOutputPin for $PXi<LOCKED, Output<MODE, SPEED>>
     where
         MODE: OutputMode,
         SPEED: Speed,
     {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
-                (unsafe { &(*GPIOA::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+                (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
             Ok(ans)
         }
 
@@ -514,14 +532,14 @@ pub mod gpioa {
         }
     }
 
-    impl<LOCKED, MODE, SPEED> StatefulOutputPin for PA0<LOCKED, Alternate<MODE, SPEED>>
+    impl<LOCKED, MODE, SPEED> StatefulOutputPin for $PXi<LOCKED, Alternate<MODE, SPEED>>
     where
         MODE: AlternateMode,
         SPEED: Speed,
     {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
-                (unsafe { &(*GPIOA::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+                (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
             Ok(ans)
         }
 
@@ -530,7 +548,7 @@ pub mod gpioa {
         }
     }
 
-    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for PA0<LOCKED, Output<MODE, SPEED>>
+    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for $PXi<LOCKED, Output<MODE, SPEED>>
     where
         MODE: OutputMode,
         SPEED: Speed,
@@ -538,13 +556,13 @@ pub mod gpioa {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*GPIOA::ptr()).octl) };
+            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*$GPIOX::ptr()).octl) };
             super::atomic_toggle_bit(r, Self::OP_LK_INDEX);
             Ok(())
         }
     }
 
-    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for PA0<LOCKED, Alternate<MODE, SPEED>>
+    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for $PXi<LOCKED, Alternate<MODE, SPEED>>
     where
         MODE: AlternateMode,
         SPEED: Speed,
@@ -552,13 +570,13 @@ pub mod gpioa {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*GPIOA::ptr()).octl) };
+            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*$GPIOX::ptr()).octl) };
             super::atomic_toggle_bit(r, Self::OP_LK_INDEX);
             Ok(())
         }
     }
 
-    impl<LOCKED, SPEED> InputPin for PA0<LOCKED, Output<OpenDrain, SPEED>>
+    impl<LOCKED, SPEED> InputPin for $PXi<LOCKED, Output<OpenDrain, SPEED>>
     where
         SPEED: Speed,
     {
@@ -566,7 +584,7 @@ pub mod gpioa {
 
         fn is_high(&self) -> Result<bool, Self::Error> {
             let ans =
-                (unsafe { &(*GPIOA::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
+                (unsafe { &(*$GPIOX::ptr()).istat }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
             Ok(ans)
         }
 
@@ -574,5 +592,103 @@ pub mod gpioa {
             Ok(!self.is_high()?)
         }
     }
-
+)+
 }
+    };
+}
+
+impl_gpio! { GPIOA, gpioa, gpioa, [
+    PA0: (pa0, 0, 0, Input<Floating>, CTL0, ctl0),
+    PA1: (pa1, 4, 1, Input<Floating>, CTL0, ctl0),
+    PA2: (pa2, 8, 2, Input<Floating>, CTL0, ctl0),
+    PA3: (pa3, 12, 3, Input<Floating>, CTL0, ctl0),
+    PA4: (pa4, 16, 4, Input<Floating>, CTL0, ctl0),
+    PA5: (pa5, 20, 5, Input<Floating>, CTL0, ctl0),
+    PA6: (pa6, 24, 6, Input<Floating>, CTL0, ctl0),
+    PA7: (pa7, 28, 7, Input<Floating>, CTL0, ctl0),
+    PA8: (pa8, 0, 8, Input<Floating>, CTL1, ctl1),
+    PA9: (pa9, 4, 9, Input<Floating>, CTL1, ctl1),
+    PA10: (pa10, 8, 10, Input<Floating>, CTL1, ctl1),
+    PA11: (pa11, 12, 11, Input<Floating>, CTL1, ctl1),
+    PA12: (pa12, 16, 12, Input<Floating>, CTL1, ctl1),
+    PA13: (pa13, 20, 13, Input<PullUp>, CTL1, ctl1),
+    PA14: (pa14, 24, 14, Input<PullDown>, CTL1, ctl1),
+    PA15: (pa15, 28, 15, Input<PullUp>, CTL1, ctl1),
+] }
+
+impl_gpio! { GPIOB, gpiob, gpioa, [
+    PB0: (pb0, 0, 0, Input<Floating>, CTL0, ctl0),
+    PB1: (pb1, 4, 1, Input<Floating>, CTL0, ctl0),
+    PB2: (pb2, 8, 2, Input<Floating>, CTL0, ctl0),
+    PB3: (pb3, 12, 3, Input<Floating>, CTL0, ctl0),
+    PB4: (pb4, 16, 4, Input<PullUp>, CTL0, ctl0),
+    PB5: (pb5, 20, 5, Input<Floating>, CTL0, ctl0),
+    PB6: (pb6, 24, 6, Input<Floating>, CTL0, ctl0),
+    PB7: (pb7, 28, 7, Input<Floating>, CTL0, ctl0),
+    PB8: (pb8, 0, 8, Input<Floating>, CTL1, ctl1),
+    PB9: (pb9, 4, 9, Input<Floating>, CTL1, ctl1),
+    PB10: (pb10, 8, 10, Input<Floating>, CTL1, ctl1),
+    PB11: (pb11, 12, 11, Input<Floating>, CTL1, ctl1),
+    PB12: (pb12, 16, 12, Input<Floating>, CTL1, ctl1),
+    PB13: (pb13, 20, 13, Input<Floating>, CTL1, ctl1),
+    PB14: (pb14, 24, 14, Input<Floating>, CTL1, ctl1),
+    PB15: (pb15, 28, 15, Input<Floating>, CTL1, ctl1),
+] }
+
+impl_gpio! { GPIOC, gpioc, gpioa, [
+    PC0: (pc0, 0, 0, Input<Floating>, CTL0, ctl0),
+    PC1: (pc1, 4, 1, Input<Floating>, CTL0, ctl0),
+    PC2: (pc2, 8, 2, Input<Floating>, CTL0, ctl0),
+    PC3: (pc3, 12, 3, Input<Floating>, CTL0, ctl0),
+    PC4: (pc4, 16, 4, Input<Floating>, CTL0, ctl0),
+    PC5: (pc5, 20, 5, Input<Floating>, CTL0, ctl0),
+    PC6: (pc6, 24, 6, Input<Floating>, CTL0, ctl0),
+    PC7: (pc7, 28, 7, Input<Floating>, CTL0, ctl0),
+    PC8: (pc8, 0, 8, Input<Floating>, CTL1, ctl1),
+    PC9: (pc9, 4, 9, Input<Floating>, CTL1, ctl1),
+    PC10: (pc10, 8, 10, Input<Floating>, CTL1, ctl1),
+    PC11: (pc11, 12, 11, Input<Floating>, CTL1, ctl1),
+    PC12: (pc12, 16, 12, Input<Floating>, CTL1, ctl1),
+    PC13: (pc13, 20, 13, Input<Floating>, CTL1, ctl1),
+    PC14: (pc14, 24, 14, Input<Floating>, CTL1, ctl1),
+    PC15: (pc15, 28, 15, Input<Floating>, CTL1, ctl1),
+] }
+
+impl_gpio! { GPIOD, gpiod, gpioa, [
+    PD0: (pd0, 0, 0, Input<Floating>, CTL0, ctl0),
+    PD1: (pd1, 4, 1, Input<Floating>, CTL0, ctl0),
+    PD2: (pd2, 8, 2, Input<Floating>, CTL0, ctl0),
+    PD3: (pd3, 12, 3, Input<Floating>, CTL0, ctl0),
+    PD4: (pd4, 16, 4, Input<Floating>, CTL0, ctl0),
+    PD5: (pd5, 20, 5, Input<Floating>, CTL0, ctl0),
+    PD6: (pd6, 24, 6, Input<Floating>, CTL0, ctl0),
+    PD7: (pd7, 28, 7, Input<Floating>, CTL0, ctl0),
+    PD8: (pd8, 0, 8, Input<Floating>, CTL1, ctl1),
+    PD9: (pd9, 4, 9, Input<Floating>, CTL1, ctl1),
+    PD10: (pd10, 8, 10, Input<Floating>, CTL1, ctl1),
+    PD11: (pd11, 12, 11, Input<Floating>, CTL1, ctl1),
+    PD12: (pd12, 16, 12, Input<Floating>, CTL1, ctl1),
+    PD13: (pd13, 20, 13, Input<Floating>, CTL1, ctl1),
+    PD14: (pd14, 24, 14, Input<Floating>, CTL1, ctl1),
+    PD15: (pd15, 28, 15, Input<Floating>, CTL1, ctl1),
+] }
+
+impl_gpio! { GPIOE, gpioe, gpioa, [
+    PE0: (pe0, 0, 0, Input<Floating>, CTL0, ctl0),
+    PE1: (pe1, 4, 1, Input<Floating>, CTL0, ctl0),
+    PE2: (pe2, 8, 2, Input<Floating>, CTL0, ctl0),
+    PE3: (pe3, 12, 3, Input<Floating>, CTL0, ctl0),
+    PE4: (pe4, 16, 4, Input<Floating>, CTL0, ctl0),
+    PE5: (pe5, 20, 5, Input<Floating>, CTL0, ctl0),
+    PE6: (pe6, 24, 6, Input<Floating>, CTL0, ctl0),
+    PE7: (pe7, 28, 7, Input<Floating>, CTL0, ctl0),
+    PE8: (pe8, 0, 8, Input<Floating>, CTL1, ctl1),
+    PE9: (pe9, 4, 9, Input<Floating>, CTL1, ctl1),
+    PE10: (pe10, 8, 10, Input<Floating>, CTL1, ctl1),
+    PE11: (pe11, 12, 11, Input<Floating>, CTL1, ctl1),
+    PE12: (pe12, 16, 12, Input<Floating>, CTL1, ctl1),
+    PE13: (pe13, 20, 13, Input<Floating>, CTL1, ctl1),
+    PE14: (pe14, 24, 14, Input<Floating>, CTL1, ctl1),
+    PE15: (pe15, 28, 15, Input<Floating>, CTL1, ctl1),
+] }
+
