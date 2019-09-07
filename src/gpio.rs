@@ -1,3 +1,5 @@
+//!	General Purpose Input / Output
+
 use core::marker::PhantomData;
 use core::sync::atomic::{AtomicU32, Ordering};
 
@@ -140,6 +142,7 @@ trait PinIndex {
     const OP_LK_INDEX: usize;
 }
 
+/// GPIO port
 pub mod gpioa {
     use super::{
         Active, Alternate, AlternateMode, Analog, Floating, GpioExt, Input, InputMode, Locked,
@@ -151,6 +154,7 @@ pub mod gpioa {
     use core::sync::atomic::AtomicU32;
     use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
 
+    /// GPIO parts
     pub struct Parts {
         pub ctl0: CTL0,
         //ctl1
@@ -178,6 +182,7 @@ pub mod gpioa {
         }
     }
 
+    /// Opaque CTL0 register
     pub struct CTL0 {
         _ownership: (),
     }
@@ -188,6 +193,7 @@ pub mod gpioa {
         }
     }
 
+    /// Opaque OCTL register
     pub struct OCTL {
         _ownership: (),
     }
@@ -198,6 +204,7 @@ pub mod gpioa {
         }
     }
 
+    /// Opaque LOCK register
     pub struct LOCK {
         _ownership: (),
     }
@@ -207,8 +214,8 @@ pub mod gpioa {
             unsafe { &(*GPIOA::ptr()).lock }
         }
 
-        /// Lock all LK lock bits in this port to prevent furtuer modifications
-        /// on pin modes. 
+        /// Lock all LK lock bits in this GPIO port to prevent furtuer modifications
+        /// on pin mode configurations. 
         ///
         /// This operation cannot be undone so it consumes the LOCK ownership
         /// handle `self`. By the time this function succeeds to execute, the
@@ -234,6 +241,7 @@ pub mod gpioa {
         }
     }
 
+    /// Pin
     pub struct PA0<LOCKED, MODE> {
         _typestate_locked: PhantomData<LOCKED>,
         _typestate_mode: PhantomData<MODE>,
@@ -249,14 +257,17 @@ pub mod gpioa {
     where
         MODE: Active,
     {
+        /// Configures the pin to serve as an analog input pin.
         pub fn into_analog(self, ctl0: &mut CTL0) -> PA0<Unlocked, Analog> {
             self.into_with_ctrl_md(ctl0, 0b00_00)
         }
 
+        /// Configures the pin to serve as a floating input pin.
         pub fn into_floating_input(self, ctl0: &mut CTL0) -> PA0<Unlocked, Input<Floating>> {
             self.into_with_ctrl_md(ctl0, 0b01_00)
         }
 
+        /// Configures the pin to serve as a pull down input pin.
         pub fn into_pull_down_input(
             self,
             ctl0: &mut CTL0,
@@ -267,6 +278,7 @@ pub mod gpioa {
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
+        /// Configures the pin to serve as a pull up input pin.
         pub fn into_pull_up_input(
             self,
             ctl0: &mut CTL0,
@@ -277,6 +289,7 @@ pub mod gpioa {
             self.into_with_ctrl_md(ctl0, 0b10_00)
         }
 
+        /// Configures the pin to serve as a push pull output pin with maximum speed given.
         pub fn into_push_pull_output_speed<SPEED: Speed>(
             self,
             ctl0: &mut CTL0,
@@ -285,6 +298,7 @@ pub mod gpioa {
             self.into_with_ctrl_md(ctl0, ctrl_md)
         }
 
+        /// Configures the pin to serve as an open drain output pin with maximum speed given.
         pub fn into_open_drain_output_speed<SPEED: Speed>(
             self,
             ctl0: &mut CTL0,
@@ -293,6 +307,7 @@ pub mod gpioa {
             self.into_with_ctrl_md(ctl0, ctrl_md)
         }
 
+        /// Configures the pin to serve as a push pull alternate pin with maximum speed given
         pub fn into_push_pull_alternate_speed<SPEED: Speed>(
             self,
             ctl0: &mut CTL0,
@@ -301,6 +316,7 @@ pub mod gpioa {
             self.into_with_ctrl_md(ctl0, ctrl_md)
         }
 
+        /// Configures the pin to serve as an open drain alternate pin with maximum speed given.
         pub fn into_open_drain_alternate_speed<SPEED: Speed>(
             self,
             ctl0: &mut CTL0,
@@ -323,6 +339,12 @@ pub mod gpioa {
             }
         }
 
+        /// Lock the pin to prevent further configurations on pin mode.
+        /// 
+        /// The output state of this pin can still be changed. You may unlock locked 
+        /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
+        /// but it will not be possible if `lock_all_pins` method of LOCK struct was 
+        /// called; see its documentation for details.
         pub fn lock(self, lock: &mut LOCK) -> PA0<Locked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
@@ -337,6 +359,14 @@ pub mod gpioa {
     where
         MODE: Active,
     {
+        /// Unlock this locked pin to allow configurations of pin mode.
+        /// 
+        /// You don't need to unlock pins if you only want to change output state  
+        /// other than reconfigurate the pin mode. The caller of this method must
+        /// obtain a mutable reference of `LOCK` struct; if you have called the
+        /// `lock_all_pins` method of that struct, you would be no longer possible 
+        /// to change lock state or unlock any locked pins - see its documentation
+        ///  for details.
         pub fn unlock(self, lock: &mut LOCK) -> PA0<Unlocked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
             super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
@@ -352,6 +382,8 @@ pub mod gpioa {
         MODE: OutputMode,
         SPEED: Speed,
     {
+        /// Configures the pin to serve as a push pull output pin; 
+        /// the maximum output speed is not changed.
         pub fn into_push_pull_output(
             self,
             ctl0: &mut CTL0,
@@ -364,6 +396,8 @@ pub mod gpioa {
             }
         }
 
+        /// Configures the pin to serve as an open drain output pin; 
+        /// the maximum output speed is not changed.
         pub fn into_open_drain_output(
             self,
             ctl0: &mut CTL0,
@@ -382,6 +416,8 @@ pub mod gpioa {
         MODE: AlternateMode,
         SPEED: Speed,
     {
+        /// Configures the pin to serve as a push pull alternate pin; 
+        /// the maximum output speed is not changed.
         pub fn into_push_pull_alternate(
             self,
             ctl0: &mut CTL0,
@@ -394,6 +430,8 @@ pub mod gpioa {
             }
         }
 
+        /// Configures the pin to serve as an open drain alternate pin; 
+        /// the maximum output speed is not changed.
         pub fn into_open_drain_alternate(
             self,
             ctl0: &mut CTL0,
