@@ -6,7 +6,7 @@ repository = "https://github.com/luojia65/gd32vf103-hal"
 description = "Hardware abstract layer (HAL) for RISC-V microcontroller GD32VF103"
 authors = ["luojia65 <me@luojia.cc>"]
 edition = "2018"
-license-file = "LICENSE"
+license-file = "LICENSE-MULAN"
 keywords = ["riscv", "gd32v", "hal", "embedded-hal"]
 
 [dependencies]
