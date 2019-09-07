@@ -4,8 +4,8 @@
 
 [HAL]: https://crates.io/crates/embedded-hal
 
-[![crates.io](https://img.shields.io/crates/v/gd32vf103-hal.svg)](https://crates.io/crates/stm32f1xx-hal)
-[![Released API docs](https://docs.rs/gd32vf103-hal/badge.svg)](https://docs.rs/stm32f1xx-hal)
+[![crates.io](https://img.shields.io/crates/v/gd32vf103-hal.svg)](https://crates.io/crates/gd32vf103-hal)
+[![Released API docs](https://docs.rs/gd32vf103-hal/badge.svg)](https://docs.rs/gd32vf103-hal)
 
 ## License
 
