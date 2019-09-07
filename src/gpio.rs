@@ -7,7 +7,7 @@ use core::sync::atomic::{AtomicU32, Ordering};
 pub trait GpioExt {
     /// The type to split the GPIO into
     type Parts;
-    
+
     /// Splits the GPIO block into independent pins and registers
     fn split(self) -> Self::Parts;
 }
@@ -83,19 +83,19 @@ impl Active for Analog {}
 
 impl<MODE> Active for Input<MODE> where MODE: InputMode {}
 
+#[rustfmt::skip]
 impl<MODE, SPEED> Active for Output<MODE, SPEED>
 where
     MODE: OutputMode,
     SPEED: Speed,
-{
-}
+{}
 
+#[rustfmt::skip]
 impl<MODE, SPEED> Active for Alternate<MODE, SPEED>
 where
     MODE: AlternateMode,
     SPEED: Speed,
-{
-}
+{}
 
 /// Output speed up to 10 MHz (type state)
 pub struct UpTo10MHz;
@@ -170,7 +170,7 @@ pub mod $gpiox {
         /// Opaque OCTL register
         pub octl: OCTL,
         /// Opaque LOCK register
-        pub lock: LOCK, 
+        pub lock: LOCK,
         $(
             /// Pin
             pub $pxi: $PXi<Unlocked, $MODE>,
@@ -241,16 +241,16 @@ pub mod $gpiox {
         }
 
         /// Lock all LK lock bits in this GPIO port to prevent furtuer modifications
-        /// on pin mode configurations. 
+        /// on pin mode configurations.
         ///
         /// This operation cannot be undone so it consumes the LOCK ownership
         /// handle `self`. By the time this function succeeds to execute, the
-        /// program cannot unlock LK bits anymore before chip reset.  
+        /// program cannot unlock LK bits anymore before chip reset.
         ///
         /// Instead of returning the LOCK back, this function panics on lock failure.
         /// That's because we consider all lock failures comes from mistakes in
         /// underlying libraries or chip design which may be not proper for users
-        /// to handle by themselves. If this design results in mistake, please 
+        /// to handle by themselves. If this design results in mistake, please
         /// fire an issue to let us know.
         pub fn lock_all_pins(mut self) {
             let r: &AtomicU32 = unsafe { core::mem::transmute(self.lock()) };
@@ -366,10 +366,10 @@ $(
         }
 
         /// Lock the pin to prevent further configurations on pin mode.
-        /// 
-        /// The output state of this pin can still be changed. You may unlock locked 
+        ///
+        /// The output state of this pin can still be changed. You may unlock locked
         /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
-        /// but it will not be possible if `lock_all_pins` method of LOCK struct was 
+        /// but it will not be possible if `lock_all_pins` method of LOCK struct was
         /// called; see its documentation for details.
         pub fn lock(self, lock: &mut LOCK) -> $PXi<Locked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
@@ -386,11 +386,11 @@ $(
         MODE: Active,
     {
         /// Unlock this locked pin to allow configurations of pin mode.
-        /// 
-        /// You don't need to unlock pins if you only want to change output state  
+        ///
+        /// You don't need to unlock pins if you only want to change output state
         /// other than reconfigurate the pin mode. The caller of this method must
         /// obtain a mutable reference of `LOCK` struct; if you have called the
-        /// `lock_all_pins` method of that struct, you would be no longer possible 
+        /// `lock_all_pins` method of that struct, you would be no longer possible
         /// to change lock state or unlock any locked pins - see its documentation
         ///  for details.
         pub fn unlock(self, lock: &mut LOCK) -> $PXi<Unlocked, MODE> {
@@ -408,7 +408,7 @@ $(
         MODE: OutputMode,
         SPEED: Speed,
     {
-        /// Configures the pin to serve as a push pull output pin; 
+        /// Configures the pin to serve as a push pull output pin;
         /// the maximum output speed is not changed.
         pub fn into_push_pull_output(
             self,
@@ -422,7 +422,7 @@ $(
             }
         }
 
-        /// Configures the pin to serve as an open drain output pin; 
+        /// Configures the pin to serve as an open drain output pin;
         /// the maximum output speed is not changed.
         pub fn into_open_drain_output(
             self,
@@ -442,7 +442,7 @@ $(
         MODE: AlternateMode,
         SPEED: Speed,
     {
-        /// Configures the pin to serve as a push pull alternate pin; 
+        /// Configures the pin to serve as a push pull alternate pin;
         /// the maximum output speed is not changed.
         pub fn into_push_pull_alternate(
             self,
@@ -456,7 +456,7 @@ $(
             }
         }
 
-        /// Configures the pin to serve as an open drain alternate pin; 
+        /// Configures the pin to serve as an open drain alternate pin;
         /// the maximum output speed is not changed.
         pub fn into_open_drain_alternate(
             self,
@@ -699,4 +699,3 @@ impl_gpio! { GPIOE, gpioe, gpioa, [
     PE14: (pe14, 24, 14, Input<Floating>, CTL1, ctl1),
     PE15: (pe15, 28, 15, Input<Floating>, CTL1, ctl1),
 ] }
-
