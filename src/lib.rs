@@ -1,4 +1,5 @@
 //! Hardware abstract layer (HAL) for the GD32VF103 microcontroller chip.
+#![no_std]
 
 #![deny(missing_docs)]
 
