@@ -106,14 +106,14 @@ fn atomic_toggle_bit(r: &AtomicU32, index: usize) {
 }
 
 trait PinIndex {
-    const CTL_MD_INDEX: usize;
-
     const OP_LK_INDEX: usize;
+
+    const CTL_MD_INDEX: usize;
 }
 
 macro_rules! impl_gpio {
     ($GPIOX:ident,$gpiox:ident,$gpioy:ident, [
-        $($PXi:ident:($pxi:ident,$i_ctl:expr,$i_op:expr,$MODE:ty,$CTL:ident,$ctl:ident),)+
+        $($PXi:ident:($pxi:ident,$i:expr,$MODE:ty,$CTL:ident,$ctl:ident),)+
     ]) => {
 /// GPIO port
 pub mod $gpiox {
@@ -158,7 +158,6 @@ pub mod $gpiox {
                         _typestate_mode: PhantomData,
                     },
                 )+
-                // ...
             }
         }
     }
@@ -240,9 +239,9 @@ $(
     }
 
     impl<LOCKED, MODE> PinIndex for $PXi<LOCKED, MODE> {
-        const CTL_MD_INDEX: usize = $i_ctl;
+        const OP_LK_INDEX: usize = $i;
 
-        const OP_LK_INDEX: usize = $i_op;
+        const CTL_MD_INDEX: usize = (4 * $i) % 32;
     }
 
     impl<MODE> $PXi<Unlocked, MODE>
@@ -514,96 +513,96 @@ $(
 }
 
 impl_gpio! { GPIOA, gpioa, gpioa, [
-    PA0: (pa0, 0, 0, Input<Floating>, CTL0, ctl0),
-    PA1: (pa1, 4, 1, Input<Floating>, CTL0, ctl0),
-    PA2: (pa2, 8, 2, Input<Floating>, CTL0, ctl0),
-    PA3: (pa3, 12, 3, Input<Floating>, CTL0, ctl0),
-    PA4: (pa4, 16, 4, Input<Floating>, CTL0, ctl0),
-    PA5: (pa5, 20, 5, Input<Floating>, CTL0, ctl0),
-    PA6: (pa6, 24, 6, Input<Floating>, CTL0, ctl0),
-    PA7: (pa7, 28, 7, Input<Floating>, CTL0, ctl0),
-    PA8: (pa8, 0, 8, Input<Floating>, CTL1, ctl1),
-    PA9: (pa9, 4, 9, Input<Floating>, CTL1, ctl1),
-    PA10: (pa10, 8, 10, Input<Floating>, CTL1, ctl1),
-    PA11: (pa11, 12, 11, Input<Floating>, CTL1, ctl1),
-    PA12: (pa12, 16, 12, Input<Floating>, CTL1, ctl1),
-    PA13: (pa13, 20, 13, Input<PullUp>, CTL1, ctl1),
-    PA14: (pa14, 24, 14, Input<PullDown>, CTL1, ctl1),
-    PA15: (pa15, 28, 15, Input<PullUp>, CTL1, ctl1),
+    PA0: (pa0, 0, Input<Floating>, CTL0, ctl0),
+    PA1: (pa1, 1, Input<Floating>, CTL0, ctl0),
+    PA2: (pa2, 2, Input<Floating>, CTL0, ctl0),
+    PA3: (pa3, 3, Input<Floating>, CTL0, ctl0),
+    PA4: (pa4, 4, Input<Floating>, CTL0, ctl0),
+    PA5: (pa5, 5, Input<Floating>, CTL0, ctl0),
+    PA6: (pa6, 6, Input<Floating>, CTL0, ctl0),
+    PA7: (pa7, 7, Input<Floating>, CTL0, ctl0),
+    PA8: (pa8, 8, Input<Floating>, CTL1, ctl1),
+    PA9: (pa9, 9, Input<Floating>, CTL1, ctl1),
+    PA10: (pa10, 10, Input<Floating>, CTL1, ctl1),
+    PA11: (pa11, 11, Input<Floating>, CTL1, ctl1),
+    PA12: (pa12, 12, Input<Floating>, CTL1, ctl1),
+    PA13: (pa13, 13, Input<PullUp>, CTL1, ctl1),
+    PA14: (pa14, 14, Input<PullDown>, CTL1, ctl1),
+    PA15: (pa15, 15, Input<PullUp>, CTL1, ctl1),
 ] }
 
 impl_gpio! { GPIOB, gpiob, gpioa, [
-    PB0: (pb0, 0, 0, Input<Floating>, CTL0, ctl0),
-    PB1: (pb1, 4, 1, Input<Floating>, CTL0, ctl0),
-    PB2: (pb2, 8, 2, Input<Floating>, CTL0, ctl0),
-    PB3: (pb3, 12, 3, Input<Floating>, CTL0, ctl0),
-    PB4: (pb4, 16, 4, Input<PullUp>, CTL0, ctl0),
-    PB5: (pb5, 20, 5, Input<Floating>, CTL0, ctl0),
-    PB6: (pb6, 24, 6, Input<Floating>, CTL0, ctl0),
-    PB7: (pb7, 28, 7, Input<Floating>, CTL0, ctl0),
-    PB8: (pb8, 0, 8, Input<Floating>, CTL1, ctl1),
-    PB9: (pb9, 4, 9, Input<Floating>, CTL1, ctl1),
-    PB10: (pb10, 8, 10, Input<Floating>, CTL1, ctl1),
-    PB11: (pb11, 12, 11, Input<Floating>, CTL1, ctl1),
-    PB12: (pb12, 16, 12, Input<Floating>, CTL1, ctl1),
-    PB13: (pb13, 20, 13, Input<Floating>, CTL1, ctl1),
-    PB14: (pb14, 24, 14, Input<Floating>, CTL1, ctl1),
-    PB15: (pb15, 28, 15, Input<Floating>, CTL1, ctl1),
+    PB0: (pb0, 0, Input<Floating>, CTL0, ctl0),
+    PB1: (pb1, 1, Input<Floating>, CTL0, ctl0),
+    PB2: (pb2, 2, Input<Floating>, CTL0, ctl0),
+    PB3: (pb3, 3, Input<Floating>, CTL0, ctl0),
+    PB4: (pb4, 4, Input<PullUp>, CTL0, ctl0),
+    PB5: (pb5, 5, Input<Floating>, CTL0, ctl0),
+    PB6: (pb6, 6, Input<Floating>, CTL0, ctl0),
+    PB7: (pb7, 7, Input<Floating>, CTL0, ctl0),
+    PB8: (pb8, 8, Input<Floating>, CTL1, ctl1),
+    PB9: (pb9, 9, Input<Floating>, CTL1, ctl1),
+    PB10: (pb10, 10, Input<Floating>, CTL1, ctl1),
+    PB11: (pb11, 11, Input<Floating>, CTL1, ctl1),
+    PB12: (pb12, 12, Input<Floating>, CTL1, ctl1),
+    PB13: (pb13, 13, Input<Floating>, CTL1, ctl1),
+    PB14: (pb14, 14, Input<Floating>, CTL1, ctl1),
+    PB15: (pb15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
 impl_gpio! { GPIOC, gpioc, gpioa, [
-    PC0: (pc0, 0, 0, Input<Floating>, CTL0, ctl0),
-    PC1: (pc1, 4, 1, Input<Floating>, CTL0, ctl0),
-    PC2: (pc2, 8, 2, Input<Floating>, CTL0, ctl0),
-    PC3: (pc3, 12, 3, Input<Floating>, CTL0, ctl0),
-    PC4: (pc4, 16, 4, Input<Floating>, CTL0, ctl0),
-    PC5: (pc5, 20, 5, Input<Floating>, CTL0, ctl0),
-    PC6: (pc6, 24, 6, Input<Floating>, CTL0, ctl0),
-    PC7: (pc7, 28, 7, Input<Floating>, CTL0, ctl0),
-    PC8: (pc8, 0, 8, Input<Floating>, CTL1, ctl1),
-    PC9: (pc9, 4, 9, Input<Floating>, CTL1, ctl1),
-    PC10: (pc10, 8, 10, Input<Floating>, CTL1, ctl1),
-    PC11: (pc11, 12, 11, Input<Floating>, CTL1, ctl1),
-    PC12: (pc12, 16, 12, Input<Floating>, CTL1, ctl1),
-    PC13: (pc13, 20, 13, Input<Floating>, CTL1, ctl1),
-    PC14: (pc14, 24, 14, Input<Floating>, CTL1, ctl1),
-    PC15: (pc15, 28, 15, Input<Floating>, CTL1, ctl1),
+    PC0: (pc0, 0, Input<Floating>, CTL0, ctl0),
+    PC1: (pc1, 1, Input<Floating>, CTL0, ctl0),
+    PC2: (pc2, 2, Input<Floating>, CTL0, ctl0),
+    PC3: (pc3, 3, Input<Floating>, CTL0, ctl0),
+    PC4: (pc4, 4, Input<Floating>, CTL0, ctl0),
+    PC5: (pc5, 5, Input<Floating>, CTL0, ctl0),
+    PC6: (pc6, 6, Input<Floating>, CTL0, ctl0),
+    PC7: (pc7, 7, Input<Floating>, CTL0, ctl0),
+    PC8: (pc8, 8, Input<Floating>, CTL1, ctl1),
+    PC9: (pc9, 9, Input<Floating>, CTL1, ctl1),
+    PC10: (pc10, 10, Input<Floating>, CTL1, ctl1),
+    PC11: (pc11, 11, Input<Floating>, CTL1, ctl1),
+    PC12: (pc12, 12, Input<Floating>, CTL1, ctl1),
+    PC13: (pc13, 13, Input<Floating>, CTL1, ctl1),
+    PC14: (pc14, 14, Input<Floating>, CTL1, ctl1),
+    PC15: (pc15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
 impl_gpio! { GPIOD, gpiod, gpioa, [
-    PD0: (pd0, 0, 0, Input<Floating>, CTL0, ctl0),
-    PD1: (pd1, 4, 1, Input<Floating>, CTL0, ctl0),
-    PD2: (pd2, 8, 2, Input<Floating>, CTL0, ctl0),
-    PD3: (pd3, 12, 3, Input<Floating>, CTL0, ctl0),
-    PD4: (pd4, 16, 4, Input<Floating>, CTL0, ctl0),
-    PD5: (pd5, 20, 5, Input<Floating>, CTL0, ctl0),
-    PD6: (pd6, 24, 6, Input<Floating>, CTL0, ctl0),
-    PD7: (pd7, 28, 7, Input<Floating>, CTL0, ctl0),
-    PD8: (pd8, 0, 8, Input<Floating>, CTL1, ctl1),
-    PD9: (pd9, 4, 9, Input<Floating>, CTL1, ctl1),
-    PD10: (pd10, 8, 10, Input<Floating>, CTL1, ctl1),
-    PD11: (pd11, 12, 11, Input<Floating>, CTL1, ctl1),
-    PD12: (pd12, 16, 12, Input<Floating>, CTL1, ctl1),
-    PD13: (pd13, 20, 13, Input<Floating>, CTL1, ctl1),
-    PD14: (pd14, 24, 14, Input<Floating>, CTL1, ctl1),
-    PD15: (pd15, 28, 15, Input<Floating>, CTL1, ctl1),
+    PD0: (pd0, 0, Input<Floating>, CTL0, ctl0),
+    PD1: (pd1, 1, Input<Floating>, CTL0, ctl0),
+    PD2: (pd2, 2, Input<Floating>, CTL0, ctl0),
+    PD3: (pd3, 3, Input<Floating>, CTL0, ctl0),
+    PD4: (pd4, 4, Input<Floating>, CTL0, ctl0),
+    PD5: (pd5, 5, Input<Floating>, CTL0, ctl0),
+    PD6: (pd6, 6, Input<Floating>, CTL0, ctl0),
+    PD7: (pd7, 7, Input<Floating>, CTL0, ctl0),
+    PD8: (pd8, 8, Input<Floating>, CTL1, ctl1),
+    PD9: (pd9, 9, Input<Floating>, CTL1, ctl1),
+    PD10: (pd10, 10, Input<Floating>, CTL1, ctl1),
+    PD11: (pd11, 11, Input<Floating>, CTL1, ctl1),
+    PD12: (pd12, 12, Input<Floating>, CTL1, ctl1),
+    PD13: (pd13, 13, Input<Floating>, CTL1, ctl1),
+    PD14: (pd14, 14, Input<Floating>, CTL1, ctl1),
+    PD15: (pd15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
 impl_gpio! { GPIOE, gpioe, gpioa, [
-    PE0: (pe0, 0, 0, Input<Floating>, CTL0, ctl0),
-    PE1: (pe1, 4, 1, Input<Floating>, CTL0, ctl0),
-    PE2: (pe2, 8, 2, Input<Floating>, CTL0, ctl0),
-    PE3: (pe3, 12, 3, Input<Floating>, CTL0, ctl0),
-    PE4: (pe4, 16, 4, Input<Floating>, CTL0, ctl0),
-    PE5: (pe5, 20, 5, Input<Floating>, CTL0, ctl0),
-    PE6: (pe6, 24, 6, Input<Floating>, CTL0, ctl0),
-    PE7: (pe7, 28, 7, Input<Floating>, CTL0, ctl0),
-    PE8: (pe8, 0, 8, Input<Floating>, CTL1, ctl1),
-    PE9: (pe9, 4, 9, Input<Floating>, CTL1, ctl1),
-    PE10: (pe10, 8, 10, Input<Floating>, CTL1, ctl1),
-    PE11: (pe11, 12, 11, Input<Floating>, CTL1, ctl1),
-    PE12: (pe12, 16, 12, Input<Floating>, CTL1, ctl1),
-    PE13: (pe13, 20, 13, Input<Floating>, CTL1, ctl1),
-    PE14: (pe14, 24, 14, Input<Floating>, CTL1, ctl1),
-    PE15: (pe15, 28, 15, Input<Floating>, CTL1, ctl1),
+    PE0: (pe0, 0, Input<Floating>, CTL0, ctl0),
+    PE1: (pe1, 1, Input<Floating>, CTL0, ctl0),
+    PE2: (pe2, 2, Input<Floating>, CTL0, ctl0),
+    PE3: (pe3, 3, Input<Floating>, CTL0, ctl0),
+    PE4: (pe4, 4, Input<Floating>, CTL0, ctl0),
+    PE5: (pe5, 5, Input<Floating>, CTL0, ctl0),
+    PE6: (pe6, 6, Input<Floating>, CTL0, ctl0),
+    PE7: (pe7, 7, Input<Floating>, CTL0, ctl0),
+    PE8: (pe8, 8, Input<Floating>, CTL1, ctl1),
+    PE9: (pe9, 9, Input<Floating>, CTL1, ctl1),
+    PE10: (pe10, 10, Input<Floating>, CTL1, ctl1),
+    PE11: (pe11, 11, Input<Floating>, CTL1, ctl1),
+    PE12: (pe12, 12, Input<Floating>, CTL1, ctl1),
+    PE13: (pe13, 13, Input<Floating>, CTL1, ctl1),
+    PE14: (pe14, 14, Input<Floating>, CTL1, ctl1),
+    PE15: (pe15, 15, Input<Floating>, CTL1, ctl1),
 ] }
