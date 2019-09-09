@@ -9,6 +9,8 @@ pub trait GpioExt {
     type Parts;
 
     /// Splits the GPIO block into independent pins and registers
+    /// 
+    /// TODO: constrain RCU register
     fn split(self) -> Self::Parts;
 }
 
@@ -112,7 +114,7 @@ trait PinIndex {
 }
 
 macro_rules! impl_gpio {
-    ($GPIOX:ident,$gpiox:ident,$gpioy:ident,$PXx:ident, [
+    ($GPIOX:ident,$gpiox:ident,$gpioy:ident,$en:ident,$PXx:ident, [
         $($PXi:ident:($pxi:ident,$i:expr,$MODE:ty,$CTL:ident,$ctl:ident),)+
     ]) => {
 /// GPIO port
@@ -147,6 +149,9 @@ pub mod $gpiox {
         type Parts = Parts;
 
         fn split(self) -> Self::Parts {
+            use crate::pac::RCU;
+            // todo: only after ownership of RCU
+            unsafe { &(*RCU::ptr()) }.apb2en.write(|w| w.$en().set_bit());
             Parts {
                 ctl0: CTL0 { _ownership: () },
                 ctl1: CTL1 { _ownership: () },
@@ -600,7 +605,7 @@ $(
     };
 }
 
-impl_gpio! { GPIOA, gpioa, gpioa, PAx, [
+impl_gpio! { GPIOA, gpioa, gpioa, paen, PAx, [
     PA0: (pa0, 0, Input<Floating>, CTL0, ctl0),
     PA1: (pa1, 1, Input<Floating>, CTL0, ctl0),
     PA2: (pa2, 2, Input<Floating>, CTL0, ctl0),
@@ -619,7 +624,7 @@ impl_gpio! { GPIOA, gpioa, gpioa, PAx, [
     PA15: (pa15, 15, Input<PullUp>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOB, gpiob, gpioa, PBx, [
+impl_gpio! { GPIOB, gpiob, gpioa, pben, PBx, [
     PB0: (pb0, 0, Input<Floating>, CTL0, ctl0),
     PB1: (pb1, 1, Input<Floating>, CTL0, ctl0),
     PB2: (pb2, 2, Input<Floating>, CTL0, ctl0),
@@ -638,7 +643,7 @@ impl_gpio! { GPIOB, gpiob, gpioa, PBx, [
     PB15: (pb15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOC, gpioc, gpioa, PCx, [
+impl_gpio! { GPIOC, gpioc, gpioa, pcen, PCx, [
     PC0: (pc0, 0, Input<Floating>, CTL0, ctl0),
     PC1: (pc1, 1, Input<Floating>, CTL0, ctl0),
     PC2: (pc2, 2, Input<Floating>, CTL0, ctl0),
@@ -657,7 +662,7 @@ impl_gpio! { GPIOC, gpioc, gpioa, PCx, [
     PC15: (pc15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOD, gpiod, gpioa, PDx, [
+impl_gpio! { GPIOD, gpiod, gpioa, pden, PDx, [
     PD0: (pd0, 0, Input<Floating>, CTL0, ctl0),
     PD1: (pd1, 1, Input<Floating>, CTL0, ctl0),
     PD2: (pd2, 2, Input<Floating>, CTL0, ctl0),
@@ -676,7 +681,7 @@ impl_gpio! { GPIOD, gpiod, gpioa, PDx, [
     PD15: (pd15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOE, gpioe, gpioa, PEx, [
+impl_gpio! { GPIOE, gpioe, gpioa, peen, PEx, [
     PE0: (pe0, 0, Input<Floating>, CTL0, ctl0),
     PE1: (pe1, 1, Input<Floating>, CTL0, ctl0),
     PE2: (pe2, 2, Input<Floating>, CTL0, ctl0),
