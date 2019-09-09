@@ -11,8 +11,9 @@ pub trait RcuExt {
 impl RcuExt for RCU {
     fn constrain(self) -> Rcu {
         Rcu {
-            apb2: APB2 { _ownership: () }
+            apb2: APB2 { _ownership: () },
             // ...
+            _todo: (),
         }
     }
 }
@@ -22,6 +23,8 @@ pub struct Rcu {
     /// Advanced Pheripheral Bus 2 (APB2) registers
     pub apb2: APB2,
     // ...
+    #[doc(hidden)]
+    _todo: (),
 }
 
 /// Advanced Pheripheral Bus 2 (APB2) registers

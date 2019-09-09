@@ -143,6 +143,8 @@ pub mod $gpiox {
             /// Pin
             pub $pxi: $PXi<Unlocked, $MODE>,
         )+
+        #[doc(hidden)]
+        _extensible: (),
     }
 
     impl GpioExt for $GPIOX {
@@ -163,6 +165,7 @@ pub mod $gpiox {
                         _typestate_mode: PhantomData,
                     },
                 )+
+                _extensible: (),
             }
         }
     }
