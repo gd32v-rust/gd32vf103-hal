@@ -479,6 +479,23 @@ $(
         }
     }
 
+    impl<LOCKED, MODE> $PXi<LOCKED, MODE> 
+    where 
+        MODE: Active 
+    {
+        /// Erases the pin number from the type
+        /// 
+        /// This is useful when you want to collect the pins into an array 
+        /// where you need all the elements to have the same type
+        pub fn downgrade(self) -> $PXx<LOCKED, MODE> {
+            $PXx {
+                i: $i,
+                _typestate_locked: PhantomData,
+                _typestate_mode: PhantomData
+            }
+        }
+    }
+
     impl<LOCKED, MODE> InputPin for $PXi<LOCKED, Input<MODE>> {
         type Error = Infallible;
 
