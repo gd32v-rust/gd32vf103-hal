@@ -14,11 +14,11 @@ pub struct MegaHertz(pub u32);
 
 /// Extension trait that add convenient methods to the `u32` type
 pub trait U32Ext {
-    /// Hertz
+    /// Wrap in `Hertz`
     fn hz(self) -> Hertz;
-    /// Kilo hertz
+    /// Wrap in `KiloHertz`
     fn khz(self) -> KiloHertz;
-    /// Mega hertz
+    /// Wrap in `MegaHertz`
     fn mhz(self) -> MegaHertz;
 }
 
@@ -36,3 +36,20 @@ impl U32Ext for u32 {
     }
 }
 
+impl Into<Hertz> for KiloHertz {
+    fn into(self) -> Hertz {
+        Hertz(self.0 * 1_000)
+    }
+}
+
+impl Into<Hertz> for MegaHertz {
+    fn into(self) -> Hertz {
+        Hertz(self.0 * 1_000_000)
+    }
+}
+
+impl Into<KiloHertz> for MegaHertz {
+    fn into(self) -> KiloHertz {
+        KiloHertz(self.0 * 1_000)
+    }
+}
