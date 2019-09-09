@@ -85,13 +85,13 @@ impl<MODE> Active for Output<MODE> where MODE: OutputMode {}
 
 impl<MODE> Active for Alternate<MODE> where MODE: AlternateMode {}
 
-/// Output speed up to 10 MHz (type state)
+/// Output speed up to 10 MHz (type param)
 pub struct UpTo10MHz;
 
-/// Output speed up to 2 MHz (type state)
+/// Output speed up to 2 MHz (type param)
 pub struct UpTo2MHz;
 
-/// Output speed up to 50 MHz (type state)
+/// Output speed up to 50 MHz (type param)
 pub struct UpTo50MHz;
 
 /// Marker trait for valid output speed
