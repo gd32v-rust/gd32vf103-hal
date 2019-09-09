@@ -51,39 +51,16 @@ pub struct PushPull;
 /// Open drain output or alternate (type state)
 pub struct OpenDrain;
 
-/// Marker trait for valid input modes
-pub trait InputMode {}
-
-impl InputMode for Floating {}
-
-impl InputMode for PullDown {}
-
-impl InputMode for PullUp {}
-
-/// Marker trait for valid output modes
-pub trait OutputMode {}
-
-impl OutputMode for PushPull {}
-
-impl OutputMode for OpenDrain {}
-
-/// Marker trait for valid alternate modes
-pub trait AlternateMode {}
-
-impl AlternateMode for PushPull {}
-
-impl AlternateMode for OpenDrain {}
-
 /// Marker trait for active states
 pub trait Active {}
 
 impl Active for Analog {}
 
-impl<MODE> Active for Input<MODE> where MODE: InputMode {}
+impl<MODE> Active for Input<MODE> {}
 
-impl<MODE> Active for Output<MODE> where MODE: OutputMode {}
+impl<MODE> Active for Output<MODE>{}
 
-impl<MODE> Active for Alternate<MODE> where MODE: AlternateMode {}
+impl<MODE> Active for Alternate<MODE> {}
 
 /// Output speed up to 10 MHz (type param)
 pub struct UpTo10MHz;
@@ -141,9 +118,8 @@ macro_rules! impl_gpio {
 /// GPIO port
 pub mod $gpiox {
     use super::{
-        Active, Alternate, AlternateMode, Analog, Floating, GpioExt, Input, InputMode, Locked,
-        OpenDrain, Output, OutputMode, PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked,
-        UpTo50MHz,
+        Active, Alternate, Analog, Floating, GpioExt, Input, Locked, OpenDrain, Output, 
+        PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked, UpTo50MHz,
     };
     use crate::pac::{$gpioy, $GPIOX};
     use core::convert::Infallible;
@@ -433,10 +409,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> InputPin for $PXi<LOCKED, Input<MODE>>
-    where
-        MODE: InputMode,
-    {
+    impl<LOCKED, MODE> InputPin for $PXi<LOCKED, Input<MODE>> {
         type Error = Infallible;
 
         fn is_high(&self) -> Result<bool, Self::Error> {
@@ -450,10 +423,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Output<MODE>>
-    where
-        MODE: OutputMode,
-    {
+    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Output<MODE>> {
         type Error = Infallible;
 
         fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -467,10 +437,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Alternate<MODE>>
-    where
-        MODE: AlternateMode,
-    {
+    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Alternate<MODE>> {
         type Error = Infallible;
 
         fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -484,10 +451,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Output<MODE>>
-    where
-        MODE: OutputMode,
-    {
+    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Output<MODE>> {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
                 (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
@@ -499,10 +463,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Alternate<MODE>>
-    where
-        MODE: AlternateMode,
-    {
+    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Alternate<MODE>> {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
                 (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
@@ -514,10 +475,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Output<MODE>>
-    where
-        MODE: OutputMode,
-    {
+    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Output<MODE>> {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
@@ -527,10 +485,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Alternate<MODE>>
-    where
-        MODE: AlternateMode,
-    {
+    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Alternate<MODE>> {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
