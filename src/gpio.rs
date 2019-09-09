@@ -112,7 +112,7 @@ trait PinIndex {
 }
 
 macro_rules! impl_gpio {
-    ($GPIOX:ident,$gpiox:ident,$gpioy:ident, [
+    ($GPIOX:ident,$gpiox:ident,$gpioy:ident,$PXx:ident, [
         $($PXi:ident:($pxi:ident,$i:expr,$MODE:ty,$CTL:ident,$ctl:ident),)+
     ]) => {
 /// GPIO port
@@ -229,6 +229,77 @@ pub mod $gpiox {
             } else {
                 panic!("the lock_all_pins process won't succeed")
             }
+        }
+    }
+
+    /// Partially erased pin
+    pub struct $PXx<LOCKED, MODE> {
+        i: u8,
+        _typestate_mode: PhantomData<MODE>,
+        _typestate_locked: PhantomData<LOCKED>,
+    }
+
+    impl<LOCKED, MODE> InputPin for $PXx<LOCKED, Input<MODE>> {
+        type Error = Infallible;
+
+        fn is_high(&self) -> Result<bool, Self::Error> {
+            let ans =
+                (unsafe { &(*$GPIOX::ptr()).istat }.read().bits() & (1 << self.i)) != 0;
+            Ok(ans)
+        }
+
+        fn is_low(&self) -> Result<bool, Self::Error> {
+            Ok(!self.is_high()?)
+        }
+    }
+
+    impl<LOCKED, MODE> OutputPin for $PXx<LOCKED, Output<MODE>> {
+        type Error = Infallible;
+
+        fn set_high(&mut self) -> Result<(), Self::Error> {
+            unsafe { &(*$GPIOX::ptr()).bop }.write(|w| unsafe { w.bits(1 << self.i) });
+            Ok(())
+        }
+
+        fn set_low(&mut self) -> Result<(), Self::Error> {
+            unsafe { &(*$GPIOX::ptr()).bc }.write(|w| unsafe { w.bits(1 << self.i) });
+            Ok(())
+        }
+    }
+
+    impl<LOCKED, MODE> StatefulOutputPin for $PXx<LOCKED, Output<MODE>> {
+        fn is_set_high(&self) -> Result<bool, Self::Error> {
+            let ans =
+                (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << self.i)) != 0;
+            Ok(ans)
+        }
+
+        fn is_set_low(&self) -> Result<bool, Self::Error> {
+            Ok(!self.is_set_high()?)
+        }
+    }
+
+    impl<LOCKED, MODE> ToggleableOutputPin for $PXx<LOCKED, Output<MODE>> {
+        type Error = Infallible;
+
+        fn toggle(&mut self) -> Result<(), Self::Error> {
+            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*$GPIOX::ptr()).octl) };
+            super::atomic_toggle_bit(r, self.i as usize);
+            Ok(())
+        }
+    }
+
+    impl<LOCKED> InputPin for $PXx<LOCKED, Output<OpenDrain>> {
+        type Error = Infallible;
+
+        fn is_high(&self) -> Result<bool, Self::Error> {
+            let ans =
+                (unsafe { &(*$GPIOX::ptr()).istat }.read().bits() & (1 << self.i)) != 0;
+            Ok(ans)
+        }
+
+        fn is_low(&self) -> Result<bool, Self::Error> {
+            Ok(!self.is_high()?)
         }
     }
 $(
@@ -512,7 +583,7 @@ $(
     };
 }
 
-impl_gpio! { GPIOA, gpioa, gpioa, [
+impl_gpio! { GPIOA, gpioa, gpioa, PAx, [
     PA0: (pa0, 0, Input<Floating>, CTL0, ctl0),
     PA1: (pa1, 1, Input<Floating>, CTL0, ctl0),
     PA2: (pa2, 2, Input<Floating>, CTL0, ctl0),
@@ -531,7 +602,7 @@ impl_gpio! { GPIOA, gpioa, gpioa, [
     PA15: (pa15, 15, Input<PullUp>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOB, gpiob, gpioa, [
+impl_gpio! { GPIOB, gpiob, gpioa, PBx, [
     PB0: (pb0, 0, Input<Floating>, CTL0, ctl0),
     PB1: (pb1, 1, Input<Floating>, CTL0, ctl0),
     PB2: (pb2, 2, Input<Floating>, CTL0, ctl0),
@@ -550,7 +621,7 @@ impl_gpio! { GPIOB, gpiob, gpioa, [
     PB15: (pb15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOC, gpioc, gpioa, [
+impl_gpio! { GPIOC, gpioc, gpioa, PCx, [
     PC0: (pc0, 0, Input<Floating>, CTL0, ctl0),
     PC1: (pc1, 1, Input<Floating>, CTL0, ctl0),
     PC2: (pc2, 2, Input<Floating>, CTL0, ctl0),
@@ -569,7 +640,7 @@ impl_gpio! { GPIOC, gpioc, gpioa, [
     PC15: (pc15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOD, gpiod, gpioa, [
+impl_gpio! { GPIOD, gpiod, gpioa, PDx, [
     PD0: (pd0, 0, Input<Floating>, CTL0, ctl0),
     PD1: (pd1, 1, Input<Floating>, CTL0, ctl0),
     PD2: (pd2, 2, Input<Floating>, CTL0, ctl0),
@@ -588,7 +659,7 @@ impl_gpio! { GPIOD, gpiod, gpioa, [
     PD15: (pd15, 15, Input<Floating>, CTL1, ctl1),
 ] }
 
-impl_gpio! { GPIOE, gpioe, gpioa, [
+impl_gpio! { GPIOE, gpioe, gpioa, PEx, [
     PE0: (pe0, 0, Input<Floating>, CTL0, ctl0),
     PE1: (pe1, 1, Input<Floating>, CTL0, ctl0),
     PE2: (pe2, 2, Input<Floating>, CTL0, ctl0),
