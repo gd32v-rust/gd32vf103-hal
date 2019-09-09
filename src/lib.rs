@@ -15,4 +15,5 @@ pub mod prelude {
     pub use crate::time::U32Ext as _gd32vf103_hal_time_U32Ext;
     pub use crate::gpio::{UpTo10MHz, UpTo2MHz, UpTo50MHz};
     pub use embedded_hal::prelude::*;
+    pub use embedded_hal::digital::v2::*;
 }

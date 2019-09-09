@@ -483,10 +483,10 @@ $(
     where 
         MODE: Active 
     {
-        /// Erases the pin number from the type
+        /// Erases the pin number from the type.
         /// 
         /// This is useful when you want to collect the pins into an array 
-        /// where you need all the elements to have the same type
+        /// where you need all the elements to have the same type.
         pub fn downgrade(self) -> $PXx<LOCKED, MODE> {
             $PXx {
                 i: $i,
