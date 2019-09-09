@@ -1,18 +1,18 @@
 //! Hardware abstract layer (HAL) for the GD32VF103 microcontroller chip.
 //! 
-//! This is an implementation of `embedded-hal` traits for the GD32VF103, chip produced by
-//! GigaDevice Semiconductor Inc. in Beijing, with one RISC-V's RV32IMAC core as well as  
-//! up to 128 KiB of Flash and 32 KiB of SRAM.
+//! This is an implementation of `embedded-hal` traits for the GD32VF103, MCU with 
+//! one RISC-V's RV32IMAC core as well as up to 128 KiB of Flash and 32 KiB of SRAM, 
+//! produced by GigaDevice Semiconductor Inc.
 //! 
 //! # Usage 
 //! Add this crate to your dependencies:
-//! ```toml
+//! ```
 //! [dependencies]
-//! stm32f1xx-hal = "0.0"
+//! gd32vf103-hal = "0.0"
 //! ```
 //! 
 //! # Example
-//! ```Rust
+//! ```
 //! #![no_std]
 //! #![no_main]
 //! 
