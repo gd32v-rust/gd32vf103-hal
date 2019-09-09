@@ -36,15 +36,13 @@ pub struct PullDown;
 pub struct PullUp;
 
 /// Output mode (type state)
-pub struct Output<MODE, SPEED> {
+pub struct Output<MODE> {
     _typestate_mode: PhantomData<MODE>,
-    _typestate_speed: PhantomData<SPEED>,
 }
 
 /// Alternate mode (type state)
-pub struct Alternate<MODE, SPEED> {
+pub struct Alternate<MODE> {
     _typestate_mode: PhantomData<MODE>,
-    _typestate_speed: PhantomData<SPEED>,
 }
 
 /// Push-pull output or alternate (type state)
@@ -83,19 +81,9 @@ impl Active for Analog {}
 
 impl<MODE> Active for Input<MODE> where MODE: InputMode {}
 
-#[rustfmt::skip]
-impl<MODE, SPEED> Active for Output<MODE, SPEED>
-where
-    MODE: OutputMode,
-    SPEED: Speed,
-{}
+impl<MODE> Active for Output<MODE> where MODE: OutputMode {}
 
-#[rustfmt::skip]
-impl<MODE, SPEED> Active for Alternate<MODE, SPEED>
-where
-    MODE: AlternateMode,
-    SPEED: Speed,
-{}
+impl<MODE> Active for Alternate<MODE> where MODE: AlternateMode {}
 
 /// Output speed up to 10 MHz (type state)
 pub struct UpTo10MHz;
@@ -108,7 +96,8 @@ pub struct UpTo50MHz;
 
 /// Marker trait for valid output speed
 pub trait Speed {
-    /// The MD\[1:0\] bits this speed is represented into
+    // The MD\[1:0\] bits this speed is represented into
+    #[doc(hidden)]
     const MD_BITS: u32;
 }
 
@@ -154,6 +143,7 @@ pub mod $gpiox {
     use super::{
         Active, Alternate, AlternateMode, Analog, Floating, GpioExt, Input, InputMode, Locked,
         OpenDrain, Output, OutputMode, PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked,
+        UpTo50MHz,
     };
     use crate::pac::{$gpioy, $GPIOX};
     use core::convert::Infallible;
@@ -315,11 +305,51 @@ $(
             self.into_with_ctrl_md($ctl, 0b10_00)
         }
 
+        /// Configures the pin to serve as a push pull output pin;
+        /// the maximum speed is set to the default value 50MHz.
+        pub fn into_push_pull_output(
+            self,
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Output<PushPull>> {
+            let ctrl_md = 0b00_00 | UpTo50MHz::MD_BITS;
+            self.into_with_ctrl_md($ctl, ctrl_md)
+        }
+
+        /// Configures the pin to serve as an open drain output pin;
+        /// the maximum speed is set to the default value 50MHz.
+        pub fn into_open_drain_output(
+            self,
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Output<OpenDrain>> {
+            let ctrl_md = 0b01_00 | UpTo50MHz::MD_BITS;
+            self.into_with_ctrl_md($ctl, ctrl_md)
+        }
+
+        /// Configures the pin to serve as a push pull alternate pin;
+        /// the maximum speed is set to the default value 50MHz.
+        pub fn into_push_pull_alternate(
+            self,
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Alternate<PushPull>> {
+            let ctrl_md = 0b10_00 | UpTo50MHz::MD_BITS;
+            self.into_with_ctrl_md($ctl, ctrl_md)
+        }
+
+        /// Configures the pin to serve as an open drain alternate pin;
+        /// the maximum speed is set to the default value 50MHz.
+        pub fn into_open_drain_alternate(
+            self,
+            $ctl: &mut $CTL,
+        ) -> $PXi<Unlocked, Alternate<OpenDrain>> {
+            let ctrl_md = 0b11_00 | UpTo50MHz::MD_BITS;
+            self.into_with_ctrl_md($ctl, ctrl_md)
+        }
+
         /// Configures the pin to serve as a push pull output pin with maximum speed given.
         pub fn into_push_pull_output_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<PushPull, SPEED>> {
+        ) -> $PXi<Unlocked, Output<PushPull>> {
             let ctrl_md = 0b00_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -328,7 +358,7 @@ $(
         pub fn into_open_drain_output_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<OpenDrain, SPEED>> {
+        ) -> $PXi<Unlocked, Output<OpenDrain>> {
             let ctrl_md = 0b01_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -337,7 +367,7 @@ $(
         pub fn into_push_pull_alternate_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<PushPull, SPEED>> {
+        ) -> $PXi<Unlocked, Alternate<PushPull>> {
             let ctrl_md = 0b10_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -346,7 +376,7 @@ $(
         pub fn into_open_drain_alternate_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<OpenDrain, SPEED>> {
+        ) -> $PXi<Unlocked, Alternate<OpenDrain>> {
             let ctrl_md = 0b11_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -403,74 +433,6 @@ $(
         }
     }
 
-    impl<MODE, SPEED> $PXi<Unlocked, Output<MODE, SPEED>>
-    where
-        MODE: OutputMode,
-        SPEED: Speed,
-    {
-        /// Configures the pin to serve as a push pull output pin;
-        /// the maximum output speed is not changed.
-        pub fn into_push_pull_output(
-            self,
-            $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<PushPull, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
-            super::atomic_set_bit(r, false, Self::CTL_MD_INDEX);
-            $PXi {
-                _typestate_locked: PhantomData,
-                _typestate_mode: PhantomData,
-            }
-        }
-
-        /// Configures the pin to serve as an open drain output pin;
-        /// the maximum output speed is not changed.
-        pub fn into_open_drain_output(
-            self,
-            $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<OpenDrain, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
-            super::atomic_set_bit(r, true, Self::CTL_MD_INDEX);
-            $PXi {
-                _typestate_locked: PhantomData,
-                _typestate_mode: PhantomData,
-            }
-        }
-    }
-
-    impl<MODE, SPEED> $PXi<Unlocked, Alternate<MODE, SPEED>>
-    where
-        MODE: AlternateMode,
-        SPEED: Speed,
-    {
-        /// Configures the pin to serve as a push pull alternate pin;
-        /// the maximum output speed is not changed.
-        pub fn into_push_pull_alternate(
-            self,
-            $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<PushPull, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
-            super::atomic_set_bit(r, false, Self::CTL_MD_INDEX);
-            $PXi {
-                _typestate_locked: PhantomData,
-                _typestate_mode: PhantomData,
-            }
-        }
-
-        /// Configures the pin to serve as an open drain alternate pin;
-        /// the maximum output speed is not changed.
-        pub fn into_open_drain_alternate(
-            self,
-            $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<OpenDrain, SPEED>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute($ctl.$ctl()) };
-            super::atomic_set_bit(r, true, Self::CTL_MD_INDEX);
-            $PXi {
-                _typestate_locked: PhantomData,
-                _typestate_mode: PhantomData,
-            }
-        }
-    }
-
     impl<LOCKED, MODE> InputPin for $PXi<LOCKED, Input<MODE>>
     where
         MODE: InputMode,
@@ -488,10 +450,9 @@ $(
         }
     }
 
-    impl<LOCKED, MODE, SPEED> OutputPin for $PXi<LOCKED, Output<MODE, SPEED>>
+    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Output<MODE>>
     where
         MODE: OutputMode,
-        SPEED: Speed,
     {
         type Error = Infallible;
 
@@ -506,10 +467,9 @@ $(
         }
     }
 
-    impl<LOCKED, MODE, SPEED> OutputPin for $PXi<LOCKED, Alternate<MODE, SPEED>>
+    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Alternate<MODE>>
     where
         MODE: AlternateMode,
-        SPEED: Speed,
     {
         type Error = Infallible;
 
@@ -524,10 +484,9 @@ $(
         }
     }
 
-    impl<LOCKED, MODE, SPEED> StatefulOutputPin for $PXi<LOCKED, Output<MODE, SPEED>>
+    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Output<MODE>>
     where
         MODE: OutputMode,
-        SPEED: Speed,
     {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
@@ -540,10 +499,9 @@ $(
         }
     }
 
-    impl<LOCKED, MODE, SPEED> StatefulOutputPin for $PXi<LOCKED, Alternate<MODE, SPEED>>
+    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Alternate<MODE>>
     where
         MODE: AlternateMode,
-        SPEED: Speed,
     {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
@@ -556,10 +514,9 @@ $(
         }
     }
 
-    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for $PXi<LOCKED, Output<MODE, SPEED>>
+    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Output<MODE>>
     where
         MODE: OutputMode,
-        SPEED: Speed,
     {
         type Error = Infallible;
 
@@ -570,10 +527,9 @@ $(
         }
     }
 
-    impl<LOCKED, MODE, SPEED> ToggleableOutputPin for $PXi<LOCKED, Alternate<MODE, SPEED>>
+    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Alternate<MODE>>
     where
         MODE: AlternateMode,
-        SPEED: Speed,
     {
         type Error = Infallible;
 
@@ -584,10 +540,7 @@ $(
         }
     }
 
-    impl<LOCKED, SPEED> InputPin for $PXi<LOCKED, Output<OpenDrain, SPEED>>
-    where
-        SPEED: Speed,
-    {
+    impl<LOCKED> InputPin for $PXi<LOCKED, Output<OpenDrain>> {
         type Error = Infallible;
 
         fn is_high(&self) -> Result<bool, Self::Error> {
