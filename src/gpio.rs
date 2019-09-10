@@ -100,7 +100,7 @@ fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
     };
 }
 
-#[inline]
+#[inline(always)]
 fn atomic_toggle_bit(r: &AtomicU32, index: usize) {
     let mask = 1 << index;
     r.fetch_xor(mask, Ordering::SeqCst);
@@ -158,7 +158,7 @@ pub mod $gpiox {
                 ctl0: CTL0 { _ownership: () },
                 ctl1: CTL1 { _ownership: () },
                 octl: OCTL { _ownership: () },
-                lock: LOCK { _ownership: () },
+                lock: LOCK { tmp_bits: 0, _ownership: () },
                 $(
                     $pxi: $PXi {
                         _typestate_locked: PhantomData,
@@ -205,6 +205,7 @@ pub mod $gpiox {
 
     /// Opaque LOCK register
     pub struct LOCK {
+        tmp_bits: u32,
         _ownership: (),
     }
 
@@ -213,12 +214,13 @@ pub mod $gpiox {
             unsafe { &(*$GPIOX::ptr()).lock }
         }
 
-        /// Lock all LK lock bits in this GPIO port to prevent furtuer modifications
-        /// on pin mode configurations.
+        /// Lock this GPIO port to forbid furtuer modifications on pin modes.
         ///
-        /// This operation cannot be undone so it consumes the LOCK ownership
-        /// handle `self`. By the time this function succeeds to execute, the
-        /// program cannot unlock LK bits anymore before chip reset.
+        /// By the time this function succeeds to execute, the program cannot 
+        /// change CTL0 and CTL1 registers of this port anymore before chip reset.
+        /// To perform the real lock process, this operation writes LKy and LKK 
+        /// registers in a special way, and this configuration cannot be undone 
+        /// so it consumes the LOCK register struct `self`. 
         ///
         /// Instead of returning the LOCK back, this function panics on lock failure.
         /// That's because we consider all lock failures comes from mistakes in
@@ -226,13 +228,14 @@ pub mod $gpiox {
         /// to handle by themselves. If this design results in mistake, please
         /// fire an issue to let us know.
         pub fn lock_all_pins(mut self) {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(self.lock()) };
-            super::atomic_set_bit(r, true, 16);
-            super::atomic_set_bit(r, false, 16);
-            super::atomic_set_bit(r, true, 16);
-            let ans1 = self.lock().read().bits() & (1 << 16);
-            let ans2 = self.lock().read().bits() & (1 << 16);
-            if ans1 == 0 && ans2 == 1 {
+            let tmp = self.tmp_bits;
+            let a = tmp | 0x00010000;
+            self.lock().write(|w| unsafe { w.bits(a) });
+            self.lock().write(|w| unsafe { w.bits(tmp) });
+            self.lock().write(|w| unsafe { w.bits(a) });
+            let ans1 = self.lock().read().bits();
+            let ans2 = self.lock().read().bits();
+            if ans1 == 0 && ans2 & 0x00010000 != 0 {
                 return;
             } else {
                 panic!("the lock_all_pins process won't succeed")
@@ -450,13 +453,18 @@ $(
         }
 
         /// Lock the pin to prevent further configurations on pin mode.
-        ///
+        /// 
+        /// After this function is called, the pin is not actually locked; it only 
+        /// sets a marker temporary variant to prepare for the real locking process 
+        /// `lock_all_pins`. To actually perform the lock, users are encouraged to call 
+        /// `lock_all_pins` after all pins configured and locked properly.
+        /// 
         /// The output state of this pin can still be changed. You may unlock locked
         /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
         /// but it will not be possible if `lock_all_pins` method of LOCK struct was
         /// called; see its documentation for details.
         pub fn lock(self, lock: &mut LOCK) -> $PXi<Locked, MODE> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
+            let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
             $PXi {
                 _typestate_locked: PhantomData,
@@ -470,15 +478,17 @@ $(
         MODE: Active,
     {
         /// Unlock this locked pin to allow configurations of pin mode.
+        /// 
+        /// This function is not an actually unlock; it only clears the corresponding 
+        /// bit in a temporary variant in LOCK. To actually perform the lock, use 
+        /// `lock_all_pins`; see function `lock` for details.
         ///
-        /// You don't need to unlock pins if you only want to change output state
-        /// other than reconfigurate the pin mode. The caller of this method must
-        /// obtain a mutable reference of `LOCK` struct; if you have called the
-        /// `lock_all_pins` method of that struct, you would be no longer possible
-        /// to change lock state or unlock any locked pins - see its documentation
-        ///  for details.
+        /// The caller of this method must obtain a mutable reference of `LOCK` struct; 
+        /// if you have called the `lock_all_pins` method of that struct, you would 
+        /// be no longer possible to change lock state or unlock any locked pins - 
+        /// see its documentation for details.
         pub fn unlock(self, lock: &mut LOCK) -> $PXi<Unlocked, MODE> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(lock.lock()) };
+            let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
             super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
             $PXi {
                 _typestate_locked: PhantomData,
