@@ -158,7 +158,10 @@ pub mod $gpiox {
                 ctl0: CTL0 { _ownership: () },
                 ctl1: CTL1 { _ownership: () },
                 octl: OCTL { _ownership: () },
-                lock: LOCK { tmp_bits: 0, _ownership: () },
+                lock: LOCK { 
+                    tmp_bits: unsafe { &(*$GPIOX::ptr()).lock }.read().bits(),
+                    _ownership: () 
+                },
                 $(
                     $pxi: $PXi {
                         _typestate_locked: PhantomData,
