@@ -45,7 +45,7 @@
 //! ```
 
 #![no_std]
-#![deny(missing_docs)]
+// #![deny(missing_docs)]
 
 pub use gd32vf103_pac as pac;
 
