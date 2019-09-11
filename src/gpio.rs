@@ -217,7 +217,8 @@ pub mod $gpiox {
             unsafe { &(*$GPIOX::ptr()).lock }
         }
 
-        /// Lock this GPIO port to forbid furtuer modifications on pin modes.
+        /// Freeze pin modes of this GPIO port to forbid furtuer modifications 
+        /// on pin modes.
         ///
         /// By the time this function succeeds to execute, the program cannot 
         /// change CTL0 and CTL1 registers of this port anymore before chip reset.
@@ -230,7 +231,7 @@ pub mod $gpiox {
         /// underlying libraries or chip design which may be not proper for users
         /// to handle by themselves. If this design results in mistake, please
         /// fire an issue to let us know.
-        pub fn lock_all_pins(mut self) {
+        pub fn freeze(mut self) {
             let tmp = self.tmp_bits;
             let a = tmp | 0x00010000;
             self.lock().write(|w| unsafe { w.bits(a) });
@@ -241,7 +242,7 @@ pub mod $gpiox {
             if ans1 == 0 && ans2 & 0x00010000 != 0 {
                 return;
             } else {
-                panic!("the lock_all_pins process won't succeed")
+                panic!("the LOCK freeze process won't succeed")
             }
         }
     }
@@ -458,13 +459,13 @@ $(
         /// Lock the pin to prevent further configurations on pin mode.
         /// 
         /// After this function is called, the pin is not actually locked; it only 
-        /// sets a marker temporary variant to prepare for the real locking process 
-        /// `lock_all_pins`. To actually perform the lock, users are encouraged to call 
-        /// `lock_all_pins` after all pins configured and locked properly.
+        /// sets a marker temporary variant to prepare for the real lock freezing
+        /// procedure `freeze`. To actually perform the lock, users are encouraged
+        /// to call `freeze` after all pins configured and marked properly for lock.
         /// 
         /// The output state of this pin can still be changed. You may unlock locked
         /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
-        /// but it will not be possible if `lock_all_pins` method of LOCK struct was
+        /// but it will not be possible if `freeze` method of LOCK struct was
         /// called; see its documentation for details.
         pub fn lock(self, lock: &mut LOCK) -> $PXi<Locked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
@@ -483,13 +484,12 @@ $(
         /// Unlock this locked pin to allow configurations of pin mode.
         /// 
         /// This function is not an actually unlock; it only clears the corresponding 
-        /// bit in a temporary variant in LOCK. To actually perform the lock, use 
-        /// `lock_all_pins`; see function `lock` for details.
+        /// bit in a temporary variant in LOCK. To actually perform and freeze the lock, 
+        /// use `freeze`; see function `lock` for details.
         ///
         /// The caller of this method must obtain a mutable reference of `LOCK` struct; 
-        /// if you have called the `lock_all_pins` method of that struct, you would 
-        /// be no longer possible to change lock state or unlock any locked pins - 
-        /// see its documentation for details.
+        /// if you have called the `freeze` method of that struct, lock state of all pins
+        /// would be no longer possible to change - see its documentation for details.
         pub fn unlock(self, lock: &mut LOCK) -> $PXi<Unlocked, MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
             super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
