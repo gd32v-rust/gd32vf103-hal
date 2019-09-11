@@ -47,6 +47,18 @@ pub struct APB1 {
     _ownership: ()
 }
 
+impl APB1 {
+    #[inline]
+    pub(crate) fn en(&mut self) -> &rcu::APB1EN {
+        unsafe { &(*RCU::ptr()).apb1en }
+    }
+
+    #[inline]
+    pub(crate) fn rst(&mut self) -> &rcu::APB1RST {
+        unsafe { &(*RCU::ptr()).apb1rst }
+    }
+}
+
 /// Advanced Pheripheral Bus 2 (APB2) registers
 /// 
 /// Constrains `APB2EN` and `ABR2RST`.
@@ -55,11 +67,19 @@ pub struct APB2 {
 }
 
 impl APB2 {
+    #[inline]
     pub(crate) fn en(&mut self) -> &rcu::APB2EN {
         unsafe { &(*RCU::ptr()).apb2en }
     }
 
+    #[inline]
     pub(crate) fn rst(&mut self) -> &rcu::APB2RST {
         unsafe { &(*RCU::ptr()).apb2rst }
     }
 }
+
+
+pub struct Clocks {
+
+}
+
