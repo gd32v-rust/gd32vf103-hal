@@ -1,7 +1,7 @@
 //! Timers
 use crate::time::Hertz;
 use embedded_hal::timer::{CountDown, Periodic};
-use void::Void;
+// use void::Void;
 
 /// Hardware timers
 pub struct Timer<TIM> {
@@ -21,7 +21,7 @@ impl Timer<TIMER2> {
         apb1.rst().write(|w| w.timer2rst().set_bit());
         apb1.rst().write(|w| w.timer2rst().clear_bit());
         let mut timer = Timer { clocks, timer: timer2 };
-        timer.start(timeout);
+        // timer.start(timeout);
         timer
     }
 }
