@@ -26,19 +26,19 @@ impl Timer<TIMER2> {
     }
 }
 
-impl CountDown for Timer<TIMER2> {
-    type Time = Hertz;
+// impl CountDown for Timer<TIMER2> {
+//     type Time = Hertz;
 
-    fn start<T>(&mut self, count: T)
-    where
-        T: Into<Self::Time>
-    {
-        unimplemented!()
-    }
+//     fn start<T>(&mut self, count: T)
+//     where
+//         T: Into<Self::Time>
+//     {
+//         unimplemented!()
+//     }
         
-    fn wait(&mut self) -> nb::Result<(), Void> {
-        unimplemented!()
-    }
-}
+//     fn wait(&mut self) -> nb::Result<(), Void> {
+//         unimplemented!()
+//     }
+// }
 
-impl Periodic for Timer<TIMER2> {}
+// impl Periodic for Timer<TIMER2> {}
