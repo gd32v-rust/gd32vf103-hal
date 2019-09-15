@@ -2,6 +2,8 @@
 
 > Hardware abstract layer ([HAL]) for the GD32VF103 RISC-V microcontroller
 
+This project is under early stage development; you may find example project and images [here](https://github.com/luojia65/example-gd32vf103).
+
 [HAL]: https://crates.io/crates/embedded-hal
 
 [![crates.io](https://img.shields.io/crates/v/gd32vf103-hal.svg)](https://crates.io/crates/gd32vf103-hal)
