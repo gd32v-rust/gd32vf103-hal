@@ -18,3 +18,16 @@ nb = "0.1"
 [dev-dependencies]
 panic-halt = "*"
 riscv-rt = "*"
+
+[profile.dev]
+codegen-units = 1
+
+[profile.release]
+codegen-units = 1
+debug = true
+lto = true
+
+[lib]
+name = "gd32vf103_hal"
+test = false
+bench = false
