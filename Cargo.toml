@@ -19,6 +19,7 @@ nb = "0.1"
 panic-halt = "*"
 riscv-rt = "*"
 riscv = "*"
+linked_list_allocator = "*"
 
 [profile.dev]
 codegen-units = 1
