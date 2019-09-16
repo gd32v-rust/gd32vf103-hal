@@ -8,6 +8,7 @@ authors = ["luojia65 <me@luojia.cc>"]
 edition = "2018"
 license-file = "LICENSE-MULAN"
 keywords = ["riscv", "gd32v", "hal", "embedded-hal"]
+build = "build.rs"
 
 [dependencies]
 gd32vf103-pac = "0.1"
