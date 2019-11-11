@@ -17,9 +17,11 @@ impl Timer<TIMER2> {
     where 
         T: Into<Hertz>
     {
-        apb1.en().write(|w| w.timer2en().set_bit());
-        apb1.rst().write(|w| w.timer2rst().set_bit());
-        apb1.rst().write(|w| w.timer2rst().clear_bit());
+        riscv::interrupt::free(|_| {
+            apb1.en().write(|w| w.timer2en().set_bit());
+            apb1.rst().write(|w| w.timer2rst().set_bit());
+            apb1.rst().write(|w| w.timer2rst().clear_bit());
+        });
         let mut timer = Timer { clocks, timer: timer2 };
         // timer.start(timeout);
         timer

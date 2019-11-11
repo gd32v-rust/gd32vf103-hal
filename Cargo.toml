@@ -14,12 +14,11 @@ build = "build.rs"
 gd32vf103-pac = "0.1"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }
 nb = "0.1"
-# void = "*"
+riscv = "0.5"
 
 [dev-dependencies]
 panic-halt = "*"
 riscv-rt = "*"
-riscv = "*"
 linked_list_allocator = "*"
 
 [profile.dev]

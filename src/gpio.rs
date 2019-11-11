@@ -151,9 +151,11 @@ pub mod $gpiox {
         type Parts = Parts;
 
         fn split(self, apb2: &mut APB2) -> Self::Parts {
-            apb2.en().write(|w| w.$en().set_bit());
-            apb2.rst().write(|w| w.$rst().set_bit());
-            apb2.rst().write(|w| w.$rst().clear_bit());
+            riscv::interrupt::free(|_| {
+                apb2.en().write(|w| w.$en().set_bit());
+                apb2.rst().write(|w| w.$rst().set_bit());
+                apb2.rst().write(|w| w.$rst().clear_bit());
+            });
             Parts {
                 ctl0: CTL0 { _ownership: () },
                 ctl1: CTL1 { _ownership: () },
@@ -234,12 +236,15 @@ pub mod $gpiox {
         pub fn freeze(mut self) {
             let tmp = self.tmp_bits;
             let a = tmp | 0x00010000;
-            self.lock().write(|w| unsafe { w.bits(a) });
-            self.lock().write(|w| unsafe { w.bits(tmp) });
-            self.lock().write(|w| unsafe { w.bits(a) });
-            let ans1 = self.lock().read().bits();
-            let ans2 = self.lock().read().bits();
-            if ans1 == 0 && ans2 & 0x00010000 != 0 {
+            let success = riscv::interrupt::free(|_| {
+                self.lock().write(|w| unsafe { w.bits(a) });
+                self.lock().write(|w| unsafe { w.bits(tmp) });
+                self.lock().write(|w| unsafe { w.bits(a) });
+                let ans1 = self.lock().read().bits();
+                let ans2 = self.lock().read().bits();
+                ans1 == 0 && ans2 & 0x00010000 != 0
+            });
+            if success {
                 return;
             } else {
                 panic!("the LOCK freeze process won't succeed")
