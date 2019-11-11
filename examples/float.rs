@@ -5,8 +5,6 @@
 extern crate panic_halt;
 extern crate alloc;
 
-use riscv_rt::entry;
-
 use linked_list_allocator::LockedHeap;
 
 #[global_allocator]
@@ -19,7 +17,7 @@ fn oom(_: core::alloc::Layout) -> ! {
 
 use alloc::format;
 
-#[entry]
+#[riscv_rt::entry]
 fn main() -> ! {
     let a = 2.33f32;
     let s = format!("{}", a);

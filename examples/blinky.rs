@@ -3,12 +3,9 @@
 
 extern crate panic_halt;
 
-use riscv_rt::entry;
-use gd32vf103_hal as hal;
-use hal::prelude::*;
-use hal::pac as pac;
+use gd32vf103_hal::{prelude::*, pac};
 
-#[entry]
+#[riscv_rt::entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
     let mut rcu = dp.RCU.constrain();
