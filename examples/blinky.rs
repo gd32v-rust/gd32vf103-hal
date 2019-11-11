@@ -39,6 +39,22 @@ fn main() -> ! {
        
         (*pac::TIMER1::ptr()).ctl0.write(|w| w.cen().set_bit());
     }
+    // clock output
+    let mut _pa8 = gpioa.pa8.into_alternate_push_pull(&mut gpioa.ctl1);
+    /* 
+        00xx: No clock selected
+        0100: System clock selected
+        0101: High Speed 8M Internal Oscillator clock selected
+        0110: External High Speed oscillator clock selected
+        0111: (CK_PLL / 2) clock selected
+        1000: CK_PLL1 clock selected
+        1001: CK_PLL2 clock divided by 2 selected
+        1010: EXT1 selected
+        1011: CK_PLL2 clock selected
+    */
+    unsafe {
+        (*pac::RCU::ptr()).cfg0.write(|w| w.ckout0sel().bits(0b1000));
+    }
     loop {    
         pa1.set_high().unwrap();
         while unsafe { &(*pac::TIMER1::ptr()) }

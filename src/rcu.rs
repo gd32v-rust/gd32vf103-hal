@@ -78,7 +78,6 @@ impl APB2 {
     }
 }
 
-
 pub struct Clocks {
 
 }

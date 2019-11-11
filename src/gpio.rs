@@ -388,7 +388,7 @@ $(
 
         /// Configures the pin to serve as a push pull alternate pin;
         /// the maximum speed is set to the default value 50MHz.
-        pub fn into_push_pull_alternate(
+        pub fn into_alternate_push_pull(
             self,
             $ctl: &mut $CTL,
         ) -> $PXi<Unlocked, Alternate<PushPull>> {
@@ -398,7 +398,7 @@ $(
 
         /// Configures the pin to serve as an open drain alternate pin;
         /// the maximum speed is set to the default value 50MHz.
-        pub fn into_open_drain_alternate(
+        pub fn into_alternate_open_drain(
             self,
             $ctl: &mut $CTL,
         ) -> $PXi<Unlocked, Alternate<OpenDrain>> {
@@ -425,7 +425,7 @@ $(
         }
 
         /// Configures the pin to serve as a push pull alternate pin with maximum speed given
-        pub fn into_push_pull_alternate_speed<SPEED: Speed>(
+        pub fn into_alternate_push_pull_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
         ) -> $PXi<Unlocked, Alternate<PushPull>> {
@@ -434,7 +434,7 @@ $(
         }
 
         /// Configures the pin to serve as an open drain alternate pin with maximum speed given.
-        pub fn into_open_drain_alternate_speed<SPEED: Speed>(
+        pub fn into_alternate_open_drain_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
         ) -> $PXi<Unlocked, Alternate<OpenDrain>> {
