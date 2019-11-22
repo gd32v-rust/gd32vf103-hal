@@ -150,11 +150,11 @@ mod impl_for_locked {
 
 /// Useful unlock methods for lock marked pins
 /// 
-/// Note: We design this trait other than giving all pins an `unlock` method
+/// _Note: We design this trait other than giving all pins an `unlock` method
 /// because if we do so, the rust doc of struct `Lock` could be full of `unlock`
 /// methods (dozens of them) with full documents for each `unlock` functions, which
 /// could be confusing for users and costs much time to read and build. If any 
-/// questions, please fire an issue to let us know.
+/// questions, please fire an issue to let us know._
 pub trait Unlock {
 
     /// The lock controller register block, typically a `LOCK` struct with temporary
