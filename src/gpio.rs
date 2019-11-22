@@ -13,12 +13,6 @@ pub trait GpioExt {
     fn split(self, apb2: &mut APB2) -> Self::Parts;
 }
 
-/// Pin is locked (type state)
-pub struct Locked;
-
-/// Pin is not locked (type state)
-pub struct Unlocked;
-
 /// Analog input mode (type state)
 pub struct Analog;
 
@@ -91,6 +85,69 @@ impl Speed for UpTo2MHz {
     const MD_BITS: u32 = 0b10;
 }
 
+/// Wraps a pin if this pin is locked
+pub struct Locked<T>(T);
+
+// implement all digital input/output traits for locked pins
+mod impl_for_locked {
+    use super::Locked;
+    use embedded_hal::digital::v2::{InputPin, OutputPin, StatefulOutputPin, ToggleableOutputPin};
+
+    impl<T> OutputPin for Locked<T>
+    where
+        T: OutputPin,
+    {
+        type Error = T::Error;
+
+        fn set_low(&mut self) -> Result<(), Self::Error> {
+            self.0.set_low()
+        }
+
+        fn set_high(&mut self) -> Result<(), Self::Error> {
+            self.0.set_high()
+        }
+    }
+
+    impl<T> StatefulOutputPin for Locked<T>
+    where
+        T: StatefulOutputPin,
+    {
+        fn is_set_high(&self) -> Result<bool, Self::Error> {
+            self.0.is_set_high()
+        }
+
+        fn is_set_low(&self) -> Result<bool, Self::Error> {
+            self.0.is_set_low()
+        }
+    }
+
+    impl<T> ToggleableOutputPin for Locked<T>
+    where
+        T: ToggleableOutputPin,
+    {
+        type Error = T::Error;
+
+        fn toggle(&mut self) -> Result<(), Self::Error> {
+            self.0.toggle()
+        }
+    }
+
+    impl<T> InputPin for Locked<T>
+    where
+        T: InputPin,
+    {
+        type Error = T::Error;
+
+        fn is_high(&self) -> Result<bool, Self::Error> {
+            self.0.is_high()
+        }
+
+        fn is_low(&self) -> Result<bool, Self::Error> {
+            self.0.is_low()
+        }
+    }
+}
+
 #[inline]
 fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
     let mask = 1 << index;
@@ -119,8 +176,8 @@ macro_rules! impl_gpio {
 /// GPIO port
 pub mod $gpiox {
     use super::{
-        Active, Alternate, Analog, Floating, GpioExt, Input, Locked, OpenDrain, Output, 
-        PinIndex, PullDown, PullUp, PushPull, Speed, Unlocked, UpTo50MHz,
+        Active, Alternate, Analog, Floating, GpioExt, Input, OpenDrain, Output, 
+        PinIndex, PullDown, PullUp, PushPull, Speed, UpTo50MHz, Locked,
     };
     use crate::pac::{$gpioy, $GPIOX};
     use crate::rcu::APB2;
@@ -141,7 +198,7 @@ pub mod $gpiox {
         pub lock: LOCK,
         $(
             /// Pin
-            pub $pxi: $PXi<Unlocked, $MODE>,
+            pub $pxi: $PXi<$MODE>,
         )+
         #[doc(hidden)]
         _extensible: (),
@@ -166,7 +223,6 @@ pub mod $gpiox {
                 },
                 $(
                     $pxi: $PXi {
-                        _typestate_locked: PhantomData,
                         _typestate_mode: PhantomData,
                     },
                 )+
@@ -253,13 +309,12 @@ pub mod $gpiox {
     }
 
     /// Partially erased pin
-    pub struct $PXx<LOCKED, MODE> {
+    pub struct $PXx<MODE> {
         i: u8,
         _typestate_mode: PhantomData<MODE>,
-        _typestate_locked: PhantomData<LOCKED>,
     }
 
-    impl<LOCKED, MODE> InputPin for $PXx<LOCKED, Input<MODE>> {
+    impl<MODE> InputPin for $PXx<Input<MODE>> {
         type Error = Infallible;
 
         fn is_high(&self) -> Result<bool, Self::Error> {
@@ -273,7 +328,7 @@ pub mod $gpiox {
         }
     }
 
-    impl<LOCKED, MODE> OutputPin for $PXx<LOCKED, Output<MODE>> {
+    impl<MODE> OutputPin for $PXx<Output<MODE>> {
         type Error = Infallible;
 
         fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -287,7 +342,7 @@ pub mod $gpiox {
         }
     }
 
-    impl<LOCKED, MODE> StatefulOutputPin for $PXx<LOCKED, Output<MODE>> {
+    impl<MODE> StatefulOutputPin for $PXx<Output<MODE>> {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
                 (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << self.i)) != 0;
@@ -299,7 +354,7 @@ pub mod $gpiox {
         }
     }
 
-    impl<LOCKED, MODE> ToggleableOutputPin for $PXx<LOCKED, Output<MODE>> {
+    impl<MODE> ToggleableOutputPin for $PXx<Output<MODE>> {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
@@ -309,7 +364,7 @@ pub mod $gpiox {
         }
     }
 
-    impl<LOCKED> InputPin for $PXx<LOCKED, Output<OpenDrain>> {
+    impl InputPin for $PXx<Output<OpenDrain>> {
         type Error = Infallible;
 
         fn is_high(&self) -> Result<bool, Self::Error> {
@@ -324,28 +379,27 @@ pub mod $gpiox {
     }
 $(
     /// Pin
-    pub struct $PXi<LOCKED, MODE> {
-        _typestate_locked: PhantomData<LOCKED>,
+    pub struct $PXi<MODE> {
         _typestate_mode: PhantomData<MODE>,
     }
 
-    impl<LOCKED, MODE> PinIndex for $PXi<LOCKED, MODE> {
+    impl<MODE> PinIndex for $PXi<MODE> {
         const OP_LK_INDEX: usize = $i;
 
         const CTL_MD_INDEX: usize = (4 * $i) % 32;
     }
 
-    impl<MODE> $PXi<Unlocked, MODE>
+    impl<MODE> $PXi<MODE>
     where
         MODE: Active,
     {
         /// Configures the pin to serve as an analog input pin.
-        pub fn into_analog(self, $ctl: &mut $CTL) -> $PXi<Unlocked, Analog> {
+        pub fn into_analog(self, $ctl: &mut $CTL) -> $PXi<Analog> {
             self.into_with_ctrl_md($ctl, 0b00_00)
         }
 
         /// Configures the pin to serve as a floating input pin.
-        pub fn into_floating_input(self, $ctl: &mut $CTL) -> $PXi<Unlocked, Input<Floating>> {
+        pub fn into_floating_input(self, $ctl: &mut $CTL) -> $PXi<Input<Floating>> {
             self.into_with_ctrl_md($ctl, 0b01_00)
         }
 
@@ -354,7 +408,7 @@ $(
             self,
             $ctl: &mut $CTL,
             octl: &mut OCTL,
-        ) -> $PXi<Unlocked, Input<PullDown>> {
+        ) -> $PXi<Input<PullDown>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
             self.into_with_ctrl_md($ctl, 0b10_00)
@@ -365,7 +419,7 @@ $(
             self,
             $ctl: &mut $CTL,
             octl: &mut OCTL,
-        ) -> $PXi<Unlocked, Input<PullUp>> {
+        ) -> $PXi<Input<PullUp>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
             self.into_with_ctrl_md($ctl, 0b10_00)
@@ -376,7 +430,7 @@ $(
         pub fn into_push_pull_output(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<PushPull>> {
+        ) -> $PXi<Output<PushPull>> {
             let ctrl_md = 0b00_00 | UpTo50MHz::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -386,7 +440,7 @@ $(
         pub fn into_open_drain_output(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<OpenDrain>> {
+        ) -> $PXi<Output<OpenDrain>> {
             let ctrl_md = 0b01_00 | UpTo50MHz::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -396,7 +450,7 @@ $(
         pub fn into_alternate_push_pull(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<PushPull>> {
+        ) -> $PXi<Alternate<PushPull>> {
             let ctrl_md = 0b10_00 | UpTo50MHz::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -406,7 +460,7 @@ $(
         pub fn into_alternate_open_drain(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<OpenDrain>> {
+        ) -> $PXi<Alternate<OpenDrain>> {
             let ctrl_md = 0b11_00 | UpTo50MHz::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -415,7 +469,7 @@ $(
         pub fn into_push_pull_output_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<PushPull>> {
+        ) -> $PXi<Output<PushPull>> {
             let ctrl_md = 0b00_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -424,7 +478,7 @@ $(
         pub fn into_open_drain_output_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Output<OpenDrain>> {
+        ) -> $PXi<Output<OpenDrain>> {
             let ctrl_md = 0b01_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -433,7 +487,7 @@ $(
         pub fn into_alternate_push_pull_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<PushPull>> {
+        ) -> $PXi<Alternate<PushPull>> {
             let ctrl_md = 0b10_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
@@ -442,13 +496,13 @@ $(
         pub fn into_alternate_open_drain_speed<SPEED: Speed>(
             self,
             $ctl: &mut $CTL,
-        ) -> $PXi<Unlocked, Alternate<OpenDrain>> {
+        ) -> $PXi<Alternate<OpenDrain>> {
             let ctrl_md = 0b11_00 | SPEED::MD_BITS;
             self.into_with_ctrl_md($ctl, ctrl_md)
         }
 
         #[inline]
-        fn into_with_ctrl_md<T>(self, $ctl: &mut $CTL, ctl_and_md: u32) -> $PXi<Unlocked, T> {
+        fn into_with_ctrl_md<T>(self, $ctl: &mut $CTL, ctl_and_md: u32) -> $PXi<T> {
             $ctl.$ctl().modify(|r, w| unsafe {
                 w.bits(
                     (r.bits() & !(0b1111 << Self::CTL_MD_INDEX))
@@ -456,7 +510,6 @@ $(
                 )
             });
             $PXi {
-                _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
         }
@@ -472,17 +525,16 @@ $(
         /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
         /// but it will not be possible if `freeze` method of LOCK struct was
         /// called; see its documentation for details.
-        pub fn lock(self, lock: &mut LOCK) -> $PXi<Locked, MODE> {
+        pub fn lock(self, lock: &mut LOCK) -> Locked<$PXi<MODE>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
-            $PXi {
-                _typestate_locked: PhantomData,
+            Locked($PXi {
                 _typestate_mode: PhantomData,
-            }
+            })
         }
     }
 
-    impl<MODE> $PXi<Locked, MODE>
+    impl<MODE> Locked<$PXi<MODE>>
     where
         MODE: Active,
     {
@@ -495,17 +547,16 @@ $(
         /// The caller of this method must obtain a mutable reference of `LOCK` struct; 
         /// if you have called the `freeze` method of that struct, lock state of all pins
         /// would be no longer possible to change - see its documentation for details.
-        pub fn unlock(self, lock: &mut LOCK) -> $PXi<Unlocked, MODE> {
+        pub fn unlock(self, lock: &mut LOCK) -> $PXi<MODE> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
-            super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
+            super::atomic_set_bit(r, false, $i); // PXi::OP_LK_INDEX
             $PXi {
-                _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData,
             }
         }
     }
 
-    impl<LOCKED, MODE> $PXi<LOCKED, MODE> 
+    impl<MODE> $PXi<MODE> 
     where 
         MODE: Active 
     {
@@ -513,16 +564,15 @@ $(
         /// 
         /// This is useful when you want to collect the pins into an array 
         /// where you need all the elements to have the same type.
-        pub fn downgrade(self) -> $PXx<LOCKED, MODE> {
+        pub fn downgrade(self) -> $PXx<MODE> {
             $PXx {
                 i: $i,
-                _typestate_locked: PhantomData,
                 _typestate_mode: PhantomData
             }
         }
     }
 
-    impl<LOCKED, MODE> InputPin for $PXi<LOCKED, Input<MODE>> {
+    impl<MODE> InputPin for $PXi<Input<MODE>> {
         type Error = Infallible;
 
         fn is_high(&self) -> Result<bool, Self::Error> {
@@ -536,7 +586,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Output<MODE>> {
+    impl<MODE> OutputPin for $PXi<Output<MODE>> {
         type Error = Infallible;
 
         fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -550,7 +600,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> OutputPin for $PXi<LOCKED, Alternate<MODE>> {
+    impl<MODE> OutputPin for $PXi<Alternate<MODE>> {
         type Error = Infallible;
 
         fn set_high(&mut self) -> Result<(), Self::Error> {
@@ -564,7 +614,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Output<MODE>> {
+    impl<MODE> StatefulOutputPin for $PXi<Output<MODE>> {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
                 (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
@@ -576,7 +626,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> StatefulOutputPin for $PXi<LOCKED, Alternate<MODE>> {
+    impl<MODE> StatefulOutputPin for $PXi<Alternate<MODE>> {
         fn is_set_high(&self) -> Result<bool, Self::Error> {
             let ans =
                 (unsafe { &(*$GPIOX::ptr()).octl }.read().bits() & (1 << Self::OP_LK_INDEX)) != 0;
@@ -588,7 +638,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Output<MODE>> {
+    impl<MODE> ToggleableOutputPin for $PXi<Output<MODE>> {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
@@ -598,7 +648,7 @@ $(
         }
     }
 
-    impl<LOCKED, MODE> ToggleableOutputPin for $PXi<LOCKED, Alternate<MODE>> {
+    impl<MODE> ToggleableOutputPin for $PXi<Alternate<MODE>> {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
@@ -608,7 +658,7 @@ $(
         }
     }
 
-    impl<LOCKED> InputPin for $PXi<LOCKED, Output<OpenDrain>> {
+    impl InputPin for $PXi<Output<OpenDrain>> {
         type Error = Infallible;
 
         fn is_high(&self) -> Result<bool, Self::Error> {
