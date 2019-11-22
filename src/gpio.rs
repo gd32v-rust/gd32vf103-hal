@@ -161,7 +161,7 @@ pub trait Unlock {
     /// variant bits for each pins.
     type Lock;
 
-    /// Unlock output, typically a `PXi` struct with mode typestate.rustc_msan
+    /// Unlock output, typically a `PXi` struct with mode typestate.
     type Output;
 
     /// Mark the locked pin as unlocked to allow configurations of pin mode.
