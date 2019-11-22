@@ -148,6 +148,36 @@ mod impl_for_locked {
     }
 }
 
+/// Useful unlock methods for lock marked pins
+/// 
+/// Note: We design this trait other than giving all pins an `unlock` method
+/// because if we do so, the rust doc of struct `Lock` could be full of `unlock`
+/// methods (dozens of them) with full documents for each `unlock` functions, which
+/// could be confusing for users and costs much time to read and build. If any 
+/// questions, please fire an issue to let us know.
+pub trait Unlock {
+
+    /// The lock controller register block, typically a `LOCK` struct with temporary
+    /// variant bits for each pins.
+    type Lock;
+
+    /// Unlock output, typically a `PXi` struct with mode typestate.rustc_msan
+    type Output;
+
+    /// Mark the locked pin as unlocked to allow configurations of pin mode.
+    /// 
+    /// Typically this method uses a mutable borrow of `LOCK` struct of the gpio port.
+    /// This function is not an actually unlock; it only clears the corresponding 
+    /// bit in a temporary variant in `LOCK`. To actually perform and freeze the lock, 
+    /// use `freeze`; see function `lock` for details.
+    ///
+    /// The caller of this method must obtain a mutable reference of `LOCK` struct; 
+    /// if you have called the `freeze` method of that `LOCK` struct, the actually lock
+    /// operation would perform and lock state of all pins would be no longer possible to 
+    /// change - see its documentation for details.
+    fn unlock(self, lock: &mut Self::Lock) -> Self::Output;
+}
+
 #[inline]
 fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
     let mask = 1 << index;
@@ -177,7 +207,7 @@ macro_rules! impl_gpio {
 pub mod $gpiox {
     use super::{
         Active, Alternate, Analog, Floating, GpioExt, Input, OpenDrain, Output, 
-        PinIndex, PullDown, PullUp, PushPull, Speed, UpTo50MHz, Locked,
+        PinIndex, PullDown, PullUp, PushPull, Speed, UpTo50MHz, Locked, Unlock
     };
     use crate::pac::{$gpioy, $GPIOX};
     use crate::rcu::APB2;
@@ -525,6 +555,7 @@ $(
         /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
         /// but it will not be possible if `freeze` method of LOCK struct was
         /// called; see its documentation for details.
+        #[inline]
         pub fn lock(self, lock: &mut LOCK) -> Locked<$PXi<MODE>> {
             let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
@@ -534,20 +565,17 @@ $(
         }
     }
 
-    impl<MODE> Locked<$PXi<MODE>>
+    impl<MODE> Unlock for Locked<$PXi<MODE>>
     where
         MODE: Active,
     {
-        /// Unlock this locked pin to allow configurations of pin mode.
-        /// 
-        /// This function is not an actually unlock; it only clears the corresponding 
-        /// bit in a temporary variant in LOCK. To actually perform and freeze the lock, 
-        /// use `freeze`; see function `lock` for details.
-        ///
-        /// The caller of this method must obtain a mutable reference of `LOCK` struct; 
-        /// if you have called the `freeze` method of that struct, lock state of all pins
-        /// would be no longer possible to change - see its documentation for details.
-        pub fn unlock(self, lock: &mut LOCK) -> $PXi<MODE> {
+        type Lock = LOCK;
+        
+        type Output = $PXi<MODE>;
+        
+        #[inline]
+        fn unlock(self, lock: &mut Self::Lock) -> Self::Output {
+            // set temporary bit for this pin in LOCK struct
             let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
             super::atomic_set_bit(r, false, $i); // PXi::OP_LK_INDEX
             $PXi {

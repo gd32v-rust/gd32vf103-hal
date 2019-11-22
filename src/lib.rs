@@ -60,7 +60,10 @@ pub mod prelude {
     pub use crate::gpio::GpioExt as _gd32vf103_hal_gpio_GpioExt;
     pub use crate::rcu::RcuExt as _gd32vf103_hal_rcu_RcuExt;
     pub use crate::time::U32Ext as _gd32vf103_hal_time_U32Ext;
-    pub use crate::gpio::{UpTo10MHz, UpTo2MHz, UpTo50MHz};
+    pub use crate::gpio::{
+        UpTo10MHz, UpTo2MHz, UpTo50MHz,
+        Unlock as _gd32vf103_hal_gpio_Unlock,
+    };
     pub use embedded_hal::digital::v2::{
         InputPin as _embedded_hal_digital_v2_InputPin, 
         OutputPin as _embedded_hal_digital_v2_OutputPin, 
