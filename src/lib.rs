@@ -49,6 +49,7 @@
 
 pub use gd32vf103_pac as pac;
 
+pub mod serial;
 pub mod gpio;
 pub mod rcu;
 pub mod spi;

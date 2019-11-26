@@ -239,7 +239,7 @@ pub mod $gpiox {
 
         fn split(self, apb2: &mut APB2) -> Self::Parts {
             riscv::interrupt::free(|_| {
-                apb2.en().write(|w| w.$en().set_bit());
+                apb2.en().modify(|_,w| w.$en().set_bit());
                 apb2.rst().write(|w| w.$rst().set_bit());
                 apb2.rst().write(|w| w.$rst().clear_bit());
             });
