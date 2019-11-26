@@ -1,6 +1,7 @@
 //! Reset and Control Unit
 
 use crate::pac::{rcu, RCU};
+use crate::time::*;
 
 /// Extension trait that constrains the `RCU` peripheral
 pub trait RcuExt {
@@ -14,6 +15,13 @@ impl RcuExt for RCU {
             // ahb: AHB { _ownership: () },
             apb1: APB1 { _ownership: () },
             apb2: APB2 { _ownership: () },
+            ahb: AHB { _ownership: () },
+            clocks: Clocks {
+                ck_sys: 8.mhz().into(),
+                ck_ahb: 8.mhz().into(),
+                ck_apb1: 8.mhz().into(),
+                ck_apb2: 8.mhz().into(),
+            },
             // ...
             _todo: (),
         }
@@ -31,6 +39,14 @@ pub struct Rcu {
     /// 
     /// Constrains `APB2EN` and `ABR2RST`.
     pub apb2: APB2,
+    /// AHB registers
+    ///
+    /// Constrains `AHBEN`
+    pub ahb: AHB,
+    /// Clock configuration registers
+    ///
+    /// Constrains `CFG0` and `CFG1` and `CTL0`
+    pub clocks: Clocks,
     // ...
     #[doc(hidden)]
     _todo: (),
@@ -78,7 +94,64 @@ impl APB2 {
     }
 }
 
+//TODO read the registers and store in struct, rather than hardcode defaults
+//TODO actually freeze these somehow...
+/// Frozen clock freqencies
+///
+/// The existence of this value indicates that the core clock
+/// configuration can no longer be changed
+#[derive(Clone, Copy)]
 pub struct Clocks {
-
+    ck_sys: Hertz,
+    ck_ahb: Hertz,
+    ck_apb1: Hertz,
+    ck_apb2: Hertz,
 }
 
+impl Clocks {
+    /// Returns the frequency of the system clock
+    pub fn ck_sys(& self) -> Hertz {
+        return self.ck_sys;
+    }
+
+    /// Returns the frequency of the system clock (alias for ck_sys)
+    pub fn sysclk(& self) -> Hertz {
+        return self.ck_sys;
+    }
+
+    /// Returns the frequency of the AHB clock
+    pub fn ck_ahb(& self) -> Hertz {
+        return self.ck_ahb;
+    }
+
+    /// Returns the freqency of the Advanced Peripheral Bus 1 clock
+    pub fn ck_apb1(& self) -> Hertz {
+        return self.ck_apb1;
+    }
+
+    /// Returns the freqency of the Advanced Peripheral Bus 2 clock
+    pub fn ck_apb2(& self) -> Hertz {
+        return self.ck_apb2;
+    }
+
+    /// Returns the freqency of the PCLK1 clock used for apb1 peripherals
+    pub fn pclk1(& self) -> Hertz {
+        return self.ck_apb1;
+    }
+
+    /// Returns the freqency of the PCLK2 clock used for apb2 peripherals
+    pub fn pclk2(&self) -> Hertz {
+        return self.ck_apb2;
+    }
+}
+
+pub struct AHB {
+    _ownership: ()
+}
+
+impl AHB {
+    #[inline]
+    pub(crate) fn en(&mut self) -> &rcu::AHBEN {
+        unsafe { &(*RCU::ptr()).ahben}
+    }
+}
