@@ -7,6 +7,8 @@ extern crate alloc;
 
 use linked_list_allocator::LockedHeap;
 
+// This is an empty heap, no allocations are possible.
+// Will result in an `oom`.
 #[global_allocator]
 static ALLOCATOR: LockedHeap = LockedHeap::empty();
 

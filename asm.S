@@ -1,7 +1,6 @@
 /* author:  Luo Jia <luojia65@hust.edu.cn> 2019-11-29 */
 .section .vectors, "ax"
 .globl _gd32vf103_vectors
-.option norvc /* Do not compile as 16-bit wide instructions  */
 _gd32vf103_vectors:
 /* source: Firmware\RISCV\env_Eclipse\start.S */
     .weak  eclic_msip_handler
