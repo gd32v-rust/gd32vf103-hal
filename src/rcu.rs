@@ -52,9 +52,19 @@ pub struct Rcu {
     _todo: (),
 }
 
-// pub struct AHB {
-//     _ownership: ()
-// }
+/// AMBA High-performance Bus (AHB) registers
+/// 
+/// Constrains `AHBEN`.
+pub struct AHB {
+    _ownership: ()
+}
+
+impl AHB {
+    #[inline]
+    pub(crate) fn en(&mut self) -> &rcu::AHBEN {
+        unsafe { &(*RCU::ptr()).ahben }
+    }
+}
 
 /// Advanced Pheripheral Bus 1 (APB1) registers
 /// 
@@ -142,16 +152,5 @@ impl Clocks {
     /// Returns the freqency of the PCLK2 clock used for apb2 peripherals
     pub fn pclk2(&self) -> Hertz {
         return self.ck_apb2;
-    }
-}
-
-pub struct AHB {
-    _ownership: ()
-}
-
-impl AHB {
-    #[inline]
-    pub(crate) fn en(&mut self) -> &rcu::AHBEN {
-        unsafe { &(*RCU::ptr()).ahben}
     }
 }
