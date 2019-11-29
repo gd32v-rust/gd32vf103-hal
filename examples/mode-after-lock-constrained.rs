@@ -14,10 +14,10 @@ unsafe fn main() -> ! {
     // Switch PA0 to push-pull output with 50-MHz maximum freq
     let pa0 = gpioa.pa0.into_push_pull_output(&mut gpioa.ctl0);
     // Lock port A to prevent mode configurations
-    let mut pa0 = pa0.lock(&mut gpioa.lock);
+    let mut _pa0 = pa0.lock(&mut gpioa.lock);
     gpioa.lock.freeze(); // drops the ownership of lock
     // Try to switch mode for PA0 again 
-    let pa0 = pa0.into_open_drain_output(&mut gpioa.ctl0);
+    // let pa0 = pa0.into_open_drain_output(&mut gpioa.ctl0);
     // ^ ERROR: no such method found for type `Locked<PA0<...>>`
     loop {} 
 }

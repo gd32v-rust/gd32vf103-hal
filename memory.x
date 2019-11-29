@@ -13,3 +13,14 @@ REGION_ALIAS("REGION_BSS", SRAM);
 REGION_ALIAS("REGION_HEAP", SRAM);
 REGION_ALIAS("REGION_STACK", SRAM);
 
+EXTERN(_gd32vf103_vectors)
+EXTERN(_gd32vf103_trap_entry)
+EXTERN(_gd32vf103_irq_entry)
+
+SECTIONS
+{
+  .vectors :
+  {
+    KEEP(*(.vectors));
+  } > VECTORS
+}
