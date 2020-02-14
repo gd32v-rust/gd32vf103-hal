@@ -55,6 +55,8 @@ pub mod rcu;
 pub mod spi;
 pub mod time;
 pub mod timer;
+pub mod delay;
+pub mod systick;
 
 /// Prelude
 pub mod prelude {
