@@ -421,7 +421,7 @@ $(
 
     impl<MODE> $PXi<MODE>
     where
-        MODE: Active,
+    MODE: Active,
     {
         /// Configures the pin to serve as an analog input pin.
         pub fn into_analog(self, $ctl: &mut $CTL) -> $PXi<Analog> {
