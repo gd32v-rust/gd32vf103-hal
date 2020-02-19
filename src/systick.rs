@@ -1,22 +1,24 @@
 //! Timers
 
-use gd32vf103_pac::SYSTICK;
-// Somehow, weneed totake in theclocks modle so we know howfast theAHB clock is going. 
-// Things we know about the systick peripheral:
-//
-/// Hardware timers
+use gd32vf103_pac::CTIMER;
+// This right now just gets the systick register, system timer, or mtime. 
+// I believe system timer is the correct name, as the documentation seems to
+// imply mtimer is instruction count, while the system timer increments on
+// clock pulses.
+/// CTIMER
 
 pub struct Systick{
 }
 impl Systick {
-    pub fn get_systick(syst: &SYSTICK) -> u64
+    pub fn get_systick(ctimer: &CTIMER) -> u64
     {
-        let hi : u32 = syst.systick1.read().bits();
-        let lo : u32 = syst.systick0.read().bits();
-        if hi == syst.systick1.read().bits(){
+        // Hi is systick1
+        let hi : u32 = ctimer.mtime_hi.read().bits();
+        let lo : u32 = ctimer.mtime_lo.read().bits();
+        if hi == ctimer.mtime_hi.read().bits(){
             return (hi as u64) << 32 | (lo as u64);
         } else {
-            return (syst.systick1.read().bits() as u64) << 32 | (syst.systick0.read().bits() as u64);
+            return (ctimer.mtime_hi.read().bits() as u64) << 32 | (ctimer.mtime_lo.read().bits() as u64);
 
         }
     }
