@@ -1,7 +1,7 @@
 //! Timers
 use crate::time::Hertz;
-use embedded_hal::timer::{CountDown};
 use embedded_hal::blocking::delay::DelayMs;
+use embedded_hal::timer::CountDown;
 use nb::*;
 
 /// Hardware timers
@@ -11,14 +11,13 @@ pub struct Timer6 {
     clock_frequency: Hertz,
 }
 
-use crate::rcu;
 use crate::pac::TIMER6;
+use crate::rcu;
 
 impl Timer6 {
-    pub fn new(timer: TIMER6, clock: rcu::Clocks, apb1: &mut rcu::APB1) -> Self 
-    {
+    pub fn new(timer: TIMER6, clock: rcu::Clocks, apb1: &mut rcu::APB1) -> Self {
         riscv::interrupt::free(|_| {
-            apb1.en().modify(|_,w| w.timer6en().set_bit());
+            apb1.en().modify(|_, w| w.timer6en().set_bit());
             apb1.rst().write(|w| w.timer6rst().set_bit());
             apb1.rst().write(|w| w.timer6rst().clear_bit());
         });
@@ -41,19 +40,21 @@ impl<T: Into<u32>> DelayMs<T> for Timer6 {
     }
 }
 
-
 impl CountDown for Timer6 {
     type Time = u16;
-    fn start<T>(&mut self, count: T) where T: Into<Self::Time> {
-        unsafe{
+    fn start<T>(&mut self, count: T)
+    where
+        T: Into<Self::Time>,
+    {
+        unsafe {
             let c = count.into();
             riscv::interrupt::free(|_| {
-                self.timer.psc.write(|w|{w.psc().bits(self.clock_scaler)});
-                self.timer.intf.write(|w|{w.upif().clear_bit()});
-                self.timer.swevg.write(|w|{w.upg().set_bit()});
-                self.timer.intf.write(|w|{w.upif().clear_bit()});
-                self.timer.car.modify(|_,w|{w.carl().bits(c)});
-                self.timer.ctl0.modify(|_,w|{w.cen().set_bit()});
+                self.timer.psc.write(|w| w.psc().bits(self.clock_scaler));
+                self.timer.intf.write(|w| w.upif().clear_bit());
+                self.timer.swevg.write(|w| w.upg().set_bit());
+                self.timer.intf.write(|w| w.upif().clear_bit());
+                self.timer.car.modify(|_, w| w.carl().bits(c));
+                self.timer.ctl0.modify(|_, w| w.cen().set_bit());
             });
         }
     }
@@ -61,9 +62,10 @@ impl CountDown for Timer6 {
     //TODO this signature changes in a future version, so we don'ot need the void crate.
     fn wait(&mut self) -> nb::Result<(), void::Void> {
         let flag = self.timer.intf.read().upif().bit_is_set();
-        if flag {return Ok(())
+        if flag {
+            return Ok(());
         } else {
-            return Err(nb::Error::WouldBlock)
+            return Err(nb::Error::WouldBlock);
         }
     }
 }

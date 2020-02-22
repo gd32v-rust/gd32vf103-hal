@@ -2,8 +2,8 @@
 #![no_std]
 #![no_main]
 
-extern crate panic_halt;
 extern crate alloc;
+extern crate panic_halt;
 
 use linked_list_allocator::LockedHeap;
 

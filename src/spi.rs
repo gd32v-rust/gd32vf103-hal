@@ -1,12 +1,12 @@
 //! Serial Peripheral Interface (SPI) bus
-use crate::pac::{SPI0, SPI1, SPI2};
-use crate::rcu::{APB1, APB2, Clocks};
-use crate::gpio::{Output, PushPull, Alternate, Input, Floating};
 use crate::gpio::gpioa::*;
 use crate::gpio::gpiob::*;
+use crate::gpio::{Alternate, Floating, Input, Output, PushPull};
+use crate::pac::{SPI0, SPI1, SPI2};
+use crate::rcu::{Clocks, APB1, APB2};
 use crate::time::Hertz;
-use embedded_hal::spi::{FullDuplex, Polarity, Phase, Mode};
 use embedded_hal::blocking::spi::*;
+use embedded_hal::spi::{FullDuplex, Mode, Phase, Polarity};
 
 /// SPI error
 #[derive(Debug)]
@@ -36,7 +36,6 @@ pub trait SckPin<SPI>: private::Sealed {}
 pub trait MisoPin<SPI>: private::Sealed {}
 pub trait MosiPin<SPI>: private::Sealed {}
 pub trait NssPin<SPI>: private::Sealed {}
-
 
 macro_rules! pins {
     ($spi:ident, SCK: [$($sck:ident),*], MISO: [$($miso:ident),*], MOSI: [$($mosi:ident),*], NSS: [$($nss:ident),*]) => {
@@ -112,7 +111,7 @@ macro_rules! spi {
                                 .swnss().clear_bit()
                                 .lf().clear_bit() //MSB first
                                 .mstmod().set_bit() //master mode
-                                .ckpl().bit(mode.polarity == Polarity::IdleHigh) 
+                                .ckpl().bit(mode.polarity == Polarity::IdleHigh)
                                 .ckph().bit(mode.phase == Phase::CaptureOnSecondTransition)
                                 .spien().set_bit()
                         });
@@ -160,29 +159,28 @@ macro_rules! spi {
     }
 }
 
-
-pins!{SPI0, 
-      SCK: [PA5], //TODO leaving off alternate AFIO pins, due to conflicting Sealed trait impls
-      MISO: [PA6],
-      MOSI: [PA7],
-      NSS: [PA4]
+pins! {SPI0,
+    SCK: [PA5], //TODO leaving off alternate AFIO pins, due to conflicting Sealed trait impls
+    MISO: [PA6],
+    MOSI: [PA7],
+    NSS: [PA4]
 }
 
-pins!{SPI1, 
-      SCK: [PB13],
-      MISO: [PB14],
-      MOSI: [PB15],
-      NSS: [PB12]
+pins! {SPI1,
+    SCK: [PB13],
+    MISO: [PB14],
+    MOSI: [PB15],
+    NSS: [PB12]
 }
 
-pins!{SPI2, 
-      SCK: [PB3],
-      MISO: [PB4],
-      MOSI: [PB5],
-      NSS: [PA15]
+pins! {SPI2,
+    SCK: [PB3],
+    MISO: [PB4],
+    MOSI: [PB5],
+    NSS: [PA15]
 }
 
-spi!{
+spi! {
     SPI0: (spi0, APB2, spi0en, spi0rst, pclk2),
     SPI1: (spi1, APB1, spi1en, spi1rst, pclk1),
     SPI2: (spi2, APB1, spi2en, spi2rst, pclk1),

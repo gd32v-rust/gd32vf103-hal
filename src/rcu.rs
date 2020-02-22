@@ -32,11 +32,11 @@ impl RcuExt for RCU {
 pub struct Rcu {
     // pub ahb: AHB,
     /// Advanced Pheripheral Bus 1 (APB1) registers
-    /// 
+    ///
     /// Constrains `APB1EN` and `ABR1RST`.
     pub apb1: APB1,
     /// Advanced Pheripheral Bus 2 (APB2) registers
-    /// 
+    ///
     /// Constrains `APB2EN` and `ABR2RST`.
     pub apb2: APB2,
     /// AHB registers
@@ -53,10 +53,10 @@ pub struct Rcu {
 }
 
 /// AMBA High-performance Bus (AHB) registers
-/// 
+///
 /// Constrains `AHBEN`.
 pub struct AHB {
-    _ownership: ()
+    _ownership: (),
 }
 
 impl AHB {
@@ -67,10 +67,10 @@ impl AHB {
 }
 
 /// Advanced Pheripheral Bus 1 (APB1) registers
-/// 
+///
 /// Constrains `APB1EN` and `ABR1RST`.
 pub struct APB1 {
-    _ownership: ()
+    _ownership: (),
 }
 
 impl APB1 {
@@ -86,10 +86,10 @@ impl APB1 {
 }
 
 /// Advanced Pheripheral Bus 2 (APB2) registers
-/// 
+///
 /// Constrains `APB2EN` and `ABR2RST`.
 pub struct APB2 {
-    _ownership: ()
+    _ownership: (),
 }
 
 impl APB2 {
@@ -120,32 +120,32 @@ pub struct Clocks {
 
 impl Clocks {
     /// Returns the frequency of the system clock
-    pub fn ck_sys(& self) -> Hertz {
+    pub fn ck_sys(&self) -> Hertz {
         return self.ck_sys;
     }
 
     /// Returns the frequency of the system clock (alias for ck_sys)
-    pub fn sysclk(& self) -> Hertz {
+    pub fn sysclk(&self) -> Hertz {
         return self.ck_sys;
     }
 
     /// Returns the frequency of the AHB clock
-    pub fn ck_ahb(& self) -> Hertz {
+    pub fn ck_ahb(&self) -> Hertz {
         return self.ck_ahb;
     }
 
     /// Returns the freqency of the Advanced Peripheral Bus 1 clock
-    pub fn ck_apb1(& self) -> Hertz {
+    pub fn ck_apb1(&self) -> Hertz {
         return self.ck_apb1;
     }
 
     /// Returns the freqency of the Advanced Peripheral Bus 2 clock
-    pub fn ck_apb2(& self) -> Hertz {
+    pub fn ck_apb2(&self) -> Hertz {
         return self.ck_apb2;
     }
 
     /// Returns the freqency of the PCLK1 clock used for apb1 peripherals
-    pub fn pclk1(& self) -> Hertz {
+    pub fn pclk1(&self) -> Hertz {
         return self.ck_apb1;
     }
 

@@ -4,10 +4,10 @@
 
 extern crate panic_halt;
 
-use riscv_rt::entry;
 use gd32vf103_hal as hal;
+use hal::pac;
 use hal::prelude::*;
-use hal::pac as pac;
+use riscv_rt::entry;
 
 #[entry]
 fn main() -> ! {
@@ -49,6 +49,6 @@ fn main() -> ! {
 //     // use riscv::register::time::read; //fxck! this is not supported here
 //     let begin = unsafe { *(FCK_L as *const u32) }; //read() as u32;
 //     let end = begin + (ms) * 16;
-//     while unsafe { *(FCK_L as *const u32) }/*(read() as u32)*/ 
-//         < end {} 
+//     while unsafe { *(FCK_L as *const u32) }/*(read() as u32)*/
+//         < end {}
 // }

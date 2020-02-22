@@ -1,8 +1,8 @@
 //! General Purpose Input / Output
 
+use crate::rcu::APB2;
 use core::marker::PhantomData;
 use core::sync::atomic::{AtomicU32, Ordering};
-use crate::rcu::APB2;
 
 /// Extension trait to split a GPIO peripheral into independent pins and registers
 pub trait GpioExt {
@@ -53,7 +53,7 @@ impl Active for Analog {}
 
 impl<MODE> Active for Input<MODE> {}
 
-impl<MODE> Active for Output<MODE>{}
+impl<MODE> Active for Output<MODE> {}
 
 impl<MODE> Active for Alternate<MODE> {}
 
@@ -149,14 +149,13 @@ mod impl_for_locked {
 }
 
 /// Useful unlock methods for lock marked pins
-/// 
+///
 /// _Note: We design this trait other than giving all pins an `unlock` method
 /// because if we do so, the rust doc of struct `Lock` could be full of `unlock`
 /// methods (dozens of them) with full documents for each `unlock` functions, which
-/// could be confusing for users and costs much time to read and build. If any 
+/// could be confusing for users and costs much time to read and build. If any
 /// questions, please fire an issue to let us know._
 pub trait Unlock {
-
     /// The lock controller register block, typically a `LOCK` struct with temporary
     /// variant bits for each pins.
     type Lock;
@@ -165,15 +164,15 @@ pub trait Unlock {
     type Output;
 
     /// Mark the locked pin as unlocked to allow configurations of pin mode.
-    /// 
+    ///
     /// Typically this method uses a mutable borrow of `LOCK` struct of the gpio port.
-    /// This function is not an actually unlock; it only clears the corresponding 
-    /// bit in a temporary variant in `LOCK`. To actually perform and freeze the lock, 
+    /// This function is not an actually unlock; it only clears the corresponding
+    /// bit in a temporary variant in `LOCK`. To actually perform and freeze the lock,
     /// use `freeze`; see function `lock` for details.
     ///
-    /// The caller of this method must obtain a mutable reference of `LOCK` struct; 
+    /// The caller of this method must obtain a mutable reference of `LOCK` struct;
     /// if you have called the `freeze` method of that `LOCK` struct, the actually lock
-    /// operation would perform and lock state of all pins would be no longer possible to 
+    /// operation would perform and lock state of all pins would be no longer possible to
     /// change - see its documentation for details.
     fn unlock(self, lock: &mut Self::Lock) -> Self::Output;
 }
@@ -206,7 +205,7 @@ macro_rules! impl_gpio {
 /// GPIO port
 pub mod $gpiox {
     use super::{
-        Active, Alternate, Analog, Floating, GpioExt, Input, OpenDrain, Output, 
+        Active, Alternate, Analog, Floating, GpioExt, Input, OpenDrain, Output,
         PinIndex, PullDown, PullUp, PushPull, Speed, UpTo50MHz, Locked, Unlock
     };
     use crate::pac::{$gpioy, $GPIOX};
@@ -247,9 +246,9 @@ pub mod $gpiox {
                 ctl0: CTL0 { _ownership: () },
                 ctl1: CTL1 { _ownership: () },
                 octl: OCTL { _ownership: () },
-                lock: LOCK { 
+                lock: LOCK {
                     tmp_bits: unsafe { &(*$GPIOX::ptr()).lock }.read().bits(),
-                    _ownership: () 
+                    _ownership: ()
                 },
                 $(
                     $pxi: $PXi {
@@ -305,14 +304,14 @@ pub mod $gpiox {
             unsafe { &(*$GPIOX::ptr()).lock }
         }
 
-        /// Freeze pin modes of this GPIO port to forbid furtuer modifications 
+        /// Freeze pin modes of this GPIO port to forbid furtuer modifications
         /// on pin modes.
         ///
-        /// By the time this function succeeds to execute, the program cannot 
+        /// By the time this function succeeds to execute, the program cannot
         /// change CTL0 and CTL1 registers of this port anymore before chip reset.
-        /// To perform the real lock process, this operation writes LKy and LKK 
-        /// registers in a special way, and this configuration cannot be undone 
-        /// so it consumes the LOCK register struct `self`. 
+        /// To perform the real lock process, this operation writes LKy and LKK
+        /// registers in a special way, and this configuration cannot be undone
+        /// so it consumes the LOCK register struct `self`.
         ///
         /// Instead of returning the LOCK back, this function panics on lock failure.
         /// That's because we consider all lock failures comes from mistakes in
@@ -545,12 +544,12 @@ $(
         }
 
         /// Lock the pin to prevent further configurations on pin mode.
-        /// 
-        /// After this function is called, the pin is not actually locked; it only 
+        ///
+        /// After this function is called, the pin is not actually locked; it only
         /// sets a marker temporary variant to prepare for the real lock freezing
         /// procedure `freeze`. To actually perform the lock, users are encouraged
         /// to call `freeze` after all pins configured and marked properly for lock.
-        /// 
+        ///
         /// The output state of this pin can still be changed. You may unlock locked
         /// pins by using `unlock` method with a mutable reference of `LOCK` struct,
         /// but it will not be possible if `freeze` method of LOCK struct was
@@ -570,9 +569,9 @@ $(
         MODE: Active,
     {
         type Lock = LOCK;
-        
+
         type Output = $PXi<MODE>;
-        
+
         #[inline]
         fn unlock(self, lock: &mut Self::Lock) -> Self::Output {
             // set temporary bit for this pin in LOCK struct
@@ -584,13 +583,13 @@ $(
         }
     }
 
-    impl<MODE> $PXi<MODE> 
-    where 
-        MODE: Active 
+    impl<MODE> $PXi<MODE>
+    where
+        MODE: Active
     {
         /// Erases the pin number from the type.
-        /// 
-        /// This is useful when you want to collect the pins into an array 
+        ///
+        /// This is useful when you want to collect the pins into an array
         /// where you need all the elements to have the same type.
         pub fn downgrade(self) -> $PXx<MODE> {
             $PXx {

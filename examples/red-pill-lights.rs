@@ -3,7 +3,7 @@
 
 extern crate panic_halt;
 
-use gd32vf103_hal::{prelude::*, pac};
+use gd32vf103_hal::{pac, prelude::*};
 
 #[riscv_rt::entry]
 fn main() -> ! {
