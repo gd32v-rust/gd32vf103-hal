@@ -9,7 +9,7 @@ use gd32vf103_pac::CTIMER;
 // todo: A more proper name? I may prefer core timer
 // this module may cause software interrupt, thus may be controlled by multiple
 // contexts (e.g. modification in interrupts), so I prefer design as ownership
-// acquire module (CoreTimer is a new-type struct of CTIMER register block).
+// acquire model (CoreTimer is a new-type struct of CTIMER register block).
 /// CTIMER
 pub struct CoreTimer {
     ctimer: CTIMER
@@ -24,6 +24,7 @@ impl CoreTimer {
         self.ctimer
     }
 
+    // todo: is this function necessary? check.
     pub fn get_value(&self) -> u64 {
         // Hi is systick1
         let hi: u32 = self.ctimer.mtime_hi.read().bits();
@@ -38,12 +39,12 @@ impl CoreTimer {
 
     // This chip is a 32-bit MCU. Leave u32 functions here for convenience.
     #[inline]
-    pub fn get_value_hi(&self) -> u32 {
+    pub fn mtime_hi(&self) -> u32 {
         self.ctimer.mtime_hi.read().bits()
     }
 
     #[inline]
-    pub fn get_value_lo(&self) -> u32 {
+    pub fn mtime_lo(&self) -> u32 {
         self.ctimer.mtime_lo.read().bits()
     }
 

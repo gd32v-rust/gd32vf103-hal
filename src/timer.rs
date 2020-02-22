@@ -1,9 +1,11 @@
 //! Timers
 use crate::time::Hertz;
+use crate::pac::TIMER6;
+use crate::rcu::{Clocks, APB1};
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::timer::CountDown;
-use nb::*;
 
+// todo: should this be named Timer<TIMER6>?
 /// Hardware timers
 pub struct Timer6 {
     timer: TIMER6,
@@ -11,11 +13,8 @@ pub struct Timer6 {
     clock_frequency: Hertz,
 }
 
-use crate::pac::TIMER6;
-use crate::rcu;
-
 impl Timer6 {
-    pub fn new(timer: TIMER6, clock: rcu::Clocks, apb1: &mut rcu::APB1) -> Self {
+    pub fn new(timer: TIMER6, clock: Clocks, apb1: &mut APB1) -> Self {
         riscv::interrupt::free(|_| {
             apb1.en().modify(|_, w| w.timer6en().set_bit());
             apb1.rst().write(|w| w.timer6rst().set_bit());

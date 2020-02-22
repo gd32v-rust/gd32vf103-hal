@@ -18,7 +18,7 @@ riscv = "0.5"
 
 [dependencies.void]
 default-features = false
-version = "1.0.2"
+version = "1.0"
 
 [dev-dependencies]
 panic-halt = "*"
@@ -30,6 +30,7 @@ codegen-units = 1
 
 [profile.release]
 codegen-units = 1
+# Debug symbols are okay here in release; it won't be flashed into target memory
 debug = true
 lto = true
 
