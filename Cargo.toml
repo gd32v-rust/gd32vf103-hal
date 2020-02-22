@@ -11,7 +11,7 @@ keywords = ["riscv", "gd32v", "hal", "embedded-hal"]
 build = "build.rs"
 
 [dependencies]
-gd32vf103-pac = "0.1"
+gd32vf103-pac = "0.2"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }
 nb = "0.1"
 riscv = "0.5"
