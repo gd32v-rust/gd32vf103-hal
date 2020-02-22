@@ -6,6 +6,7 @@ use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::timer::CountDown;
 
 // I'd prefer using Timer<TIMERx> for convenience
+/// Timer object
 pub struct Timer<TIMER> {
     timer: TIMER,
     clock_scaler: u16,
@@ -35,6 +36,7 @@ impl<TIMER> Timer<TIMER> {
     // but prefer using Timer<TIMER>::start(self, ...) -> SomeTimer
     // when SomeTimer should be stopped, it has function returns timer back
     // as SomeTimer::stop(self) -> Timer<TIMER>.
+    /// Release the timer, return its ownership.
     pub fn release(self) -> TIMER {
         self.timer
     }
@@ -53,6 +55,7 @@ impl<T: Into<u32>> DelayMs<T> for Timer<TIMER6> {
 
 impl CountDown for Timer<TIMER6> {
     type Time = u16;
+    
     fn start<T>(&mut self, count: T)
     where
         T: Into<Self::Time>,

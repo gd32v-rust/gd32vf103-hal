@@ -1,10 +1,10 @@
-//! Delay
+//! Delays
 use crate::rcu::Clocks;
 use crate::ctimer::CoreTimer;
 use crate::time::*;
 use embedded_hal::blocking::delay::DelayMs;
 
-/// Hardware timers
+/// CoreTimer as delay provider
 pub struct Delay {
     ctimer: CoreTimer,
     clock_frequency: Hertz,
@@ -12,11 +12,17 @@ pub struct Delay {
 
 impl Delay {
     // note: Clocks : Copy
+    /// Configures the core timer as a delay provider
     pub fn new(clocks: Clocks, ctimer: CoreTimer) -> Self {
         Delay {
             ctimer,
             clock_frequency: clocks.ck_ahb(),
         }
+    }
+
+    /// Release and return the ownership of the core timer resource
+    pub fn free(self) -> CoreTimer {
+        self.ctimer
     }
 }
 
@@ -27,6 +33,7 @@ impl<T: Into<u32>> DelayMs<T> for Delay {
     // this will need to change with further documentation updates.
     fn delay_ms(&mut self, ms: T) {
         let count: u32 = ms.into() * self.clock_frequency.0 / 1000 / (2);
+        // todo: avoid using u64 values in this function
         let tmp: u64 = self.ctimer.get_value();
         let end = tmp + count as u64;
         while self.ctimer.get_value() < end {}

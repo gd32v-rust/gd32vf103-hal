@@ -1,4 +1,4 @@
-//! Timers
+//! (TODO) Core Timer
 
 use gd32vf103_pac::CTIMER;
 
@@ -20,11 +20,13 @@ impl CoreTimer {
         CoreTimer { ctimer }
     }
 
+    /// Release the core timer resource 
     pub fn free(self) -> CTIMER {
         self.ctimer
     }
 
     // todo: is this function necessary? check.
+    #[doc(hidden)]
     pub fn get_value(&self) -> u64 {
         // Hi is systick1
         let hi: u32 = self.ctimer.mtime_hi.read().bits();

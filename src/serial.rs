@@ -1,3 +1,5 @@
+//! (TODO) Serial Communication (USART)
+
 #![macro_use]
 
 use crate::pac;
@@ -105,6 +107,7 @@ fn init_usart() {
 }
 
 /// todo: more proper name
+#[doc(hidden)] // experimental, not for practical use
 pub struct SerialWrapper;
 
 impl core::fmt::Write for SerialWrapper {
@@ -123,6 +126,7 @@ impl core::fmt::Write for SerialWrapper {
 static mut STDOUT: Option<SerialWrapper> = None;
 
 #[allow(unused_variables)]
+#[doc(hidden)] // experimental, not for practical use
 pub fn init_stdout(uart: USART0) {
     init_usart();
     unsafe {
@@ -131,6 +135,7 @@ pub fn init_stdout(uart: USART0) {
 }
 
 /// Writes string to stdout
+#[doc(hidden)] // experimental, not for practical use
 pub fn write_str(s: &str) {
     unsafe {
         if let Some(stdout) = STDOUT.as_mut() {
@@ -142,6 +147,7 @@ pub fn write_str(s: &str) {
 }
 
 /// Writes formatted string to stdout
+#[doc(hidden)] // experimental, not for practical use
 pub fn write_fmt(args: core::fmt::Arguments) {
     unsafe {
         if let Some(stdout) = STDOUT.as_mut() {
@@ -153,6 +159,7 @@ pub fn write_fmt(args: core::fmt::Arguments) {
 }
 
 /// Macro for printing to the serial standard output
+#[doc(hidden)] // experimental
 #[macro_export]
 macro_rules! sprint {
     ($s:expr) => {
