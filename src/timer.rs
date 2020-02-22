@@ -5,16 +5,18 @@ use crate::rcu::{Clocks, APB1};
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::timer::CountDown;
 
-// todo: should this be named Timer<TIMER6>?
-/// Hardware timers
-pub struct Timer6 {
-    timer: TIMER6,
+// I'd prefer using Timer<TIMERx> for convenience
+pub struct Timer<TIMER> {
+    timer: TIMER,
     clock_scaler: u16,
     clock_frequency: Hertz,
-}
+} 
 
-impl Timer6 {
-    pub fn new(timer: TIMER6, clock: Clocks, apb1: &mut APB1) -> Self {
+impl Timer<TIMER6> {
+    /// Initialize the timer. 
+    /// 
+    /// An enable and reset procedure is procceed to peripheral to clean its state.
+    pub fn timer6(timer: TIMER6, clock: Clocks, apb1: &mut APB1) -> Self {
         riscv::interrupt::free(|_| {
             apb1.en().modify(|_, w| w.timer6en().set_bit());
             apb1.rst().write(|w| w.timer6rst().set_bit());
@@ -28,7 +30,17 @@ impl Timer6 {
     }
 }
 
-impl<T: Into<u32>> DelayMs<T> for Timer6 {
+impl<TIMER> Timer<TIMER> {
+    // in future designs we do not stop timer in this function
+    // but prefer using Timer<TIMER>::start(self, ...) -> SomeTimer
+    // when SomeTimer should be stopped, it has function returns timer back
+    // as SomeTimer::stop(self) -> Timer<TIMER>.
+    pub fn release(self) -> TIMER {
+        self.timer
+    }
+}
+
+impl<T: Into<u32>> DelayMs<T> for Timer<TIMER6> {
     fn delay_ms(&mut self, ms: T) {
         let count = (ms.into() * self.clock_frequency.0) / (self.clock_scaler as u32 * 1000);
         if count > u16::max_value() as u32 {
@@ -39,7 +51,7 @@ impl<T: Into<u32>> DelayMs<T> for Timer6 {
     }
 }
 
-impl CountDown for Timer6 {
+impl CountDown for Timer<TIMER6> {
     type Time = u16;
     fn start<T>(&mut self, count: T)
     where
