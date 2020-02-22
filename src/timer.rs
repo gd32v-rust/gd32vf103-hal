@@ -22,7 +22,7 @@ impl Timer<TIMER6> {
             apb1.rst().write(|w| w.timer6rst().set_bit());
             apb1.rst().write(|w| w.timer6rst().clear_bit());
         });
-        Timer6 {
+        Timer {
             timer: timer,
             clock_scaler: 1000,
             clock_frequency: clock.ck_apb1(),
@@ -47,7 +47,7 @@ impl<T: Into<u32>> DelayMs<T> for Timer<TIMER6> {
             panic!("can not delay that long");
         }
         self.start(count as u16);
-        block!(self.wait()).ok();
+        nb::block!(self.wait()).ok();
     }
 }
 
