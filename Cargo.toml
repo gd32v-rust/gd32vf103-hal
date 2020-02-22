@@ -21,9 +21,9 @@ default-features = false
 version = "1.0"
 
 [dev-dependencies]
-panic-halt = "*"
-riscv-rt = "*"
-linked_list_allocator = "*"
+panic-halt = "0.2"
+riscv-rt = "0.6"
+linked_list_allocator = "0.7"
 
 [profile.dev]
 codegen-units = 1
