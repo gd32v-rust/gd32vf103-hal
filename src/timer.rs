@@ -60,17 +60,15 @@ impl CountDown for Timer<TIMER6> {
     where
         T: Into<Self::Time>,
     {
-        unsafe {
-            let c = count.into();
-            riscv::interrupt::free(|_| {
-                self.timer.psc.write(|w| w.psc().bits(self.clock_scaler));
-                self.timer.intf.write(|w| w.upif().clear_bit());
-                self.timer.swevg.write(|w| w.upg().set_bit());
-                self.timer.intf.write(|w| w.upif().clear_bit());
-                self.timer.car.modify(|_, w| w.carl().bits(c));
-                self.timer.ctl0.modify(|_, w| w.cen().set_bit());
-            });
-        }
+        let c = count.into();
+        riscv::interrupt::free(|_| {
+            self.timer.psc.write(|w| unsafe { w.psc().bits(self.clock_scaler) });
+            self.timer.intf.write(|w| w.upif().clear_bit());
+            self.timer.swevg.write(|w| w.upg().set_bit());
+            self.timer.intf.write(|w| w.upif().clear_bit());
+            self.timer.car.modify(|_, w| unsafe { w.carl().bits(c) });
+            self.timer.ctl0.modify(|_, w| w.cen().set_bit());
+        });
     }
 
     //TODO this signature changes in a future version, so we don'ot need the void crate.
