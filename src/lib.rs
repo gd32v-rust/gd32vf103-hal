@@ -54,6 +54,7 @@ pub mod serial;
 pub mod delay;
 pub mod gpio;
 pub mod rcu;
+pub mod signature;
 pub mod spi;
 pub mod time;
 pub mod timer;
