@@ -1,4 +1,4 @@
-//! Device elevtronic signature
+//! Device electronic signature
 //! 
 //! Ref: Section 1.5, GD32VF103 User Manual
 
