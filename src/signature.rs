@@ -1,6 +1,8 @@
 //! Device electronic signature
 //! 
 //! Ref: Section 1.5, GD32VF103 User Manual
+//! 
+//! TODO: verify all functions in this module
 
 const UNIQUE_ID: *const [u8; 96] = 0x1FFF_F7E8 as *const _;
 const MEMORY_DENSITY: *const u16 = 0x1FFF_F7E0 as *const _;

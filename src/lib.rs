@@ -50,10 +50,11 @@
 pub use gd32vf103_pac as pac;
 
 pub mod ctimer;
-pub mod serial;
 pub mod delay;
+pub mod fmc;
 pub mod gpio;
 pub mod rcu;
+pub mod serial;
 pub mod signature;
 pub mod spi;
 pub mod time;
