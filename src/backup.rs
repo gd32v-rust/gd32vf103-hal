@@ -19,13 +19,14 @@ impl BkpExt for BKP {
         // to registers and RTC.
         riscv::interrupt::free(|_| {
             // 1. use apb1 to enable backup domain clock 
-            apb1.en().write(|w| w.pmuen().set_bit().bkpien().set_bit());
+            apb1.en().modify(|_, w| w.pmuen().set_bit().bkpien().set_bit());
             // 2. use pmuctl to enbale write access
             // todo: should PMU be designed as a separate module?
             pmu.ctl.write(|w| w.bkpwen().set_bit());
         });
         Parts {
             data: Data { _owned_incontinuous_storage: PhantomData },
+            tamper: Tamper { _ownership: () },
             _todo: (),
         }
     }
@@ -34,11 +35,15 @@ impl BkpExt for BKP {
 /// `BKP` Parts
 pub struct Parts {
     /// Backup data register 
+    /// 
+    /// Constrains `BKP_DATAx`.
     pub data: Data,
+    /// Tamper event monitor
+    /// 
+    /// Constrains `BKP_TPCTL` and `BKP_TPCS`. 
+    pub tamper: Tamper,
     _todo: (),
     // pub octl: OCTL,
-    // pub tpctl: TPCTL,
-    // pub tpcs: TPCS,
 }
 
 /// Backup data register 
@@ -83,4 +88,53 @@ impl Data {
             panic!("invalid index")
         }
     }
+}
+
+/// Tamper event monitor
+/// 
+/// todo: detailed doc & module verify
+pub struct Tamper {
+    _ownership: ()
+}
+
+impl Tamper {
+    /// Enable temper detection.
+    /// 
+    /// After enabled the TAMPER pin is dedicated for Backup Reset function.
+    /// The active level on the TAMPER pin resets all data of the BKP_DATAx
+    /// registers.
+    /// 
+    /// Ref: Section 4.4.3, the User Manual
+    pub fn enable(&mut self) {
+        unsafe { &*BKP::ptr() }.tpctl.modify(|_, w| w.tpen().set_bit());
+    }
+
+    /// Disable temper detection.
+    /// 
+    /// After disabled, the TEMPER pin is free for GPIO functions.
+    pub fn disable(&mut self) {
+        unsafe { &*BKP::ptr() }.tpctl.modify(|_, w| w.tpen().clear_bit());
+    }
+
+    /// Start listening to tamper event by enabling the _Tamper interrupt enable
+    /// (TPIE)_ interrupt.
+    pub fn listen(&mut self, event: Event) {
+        let Event::Tamper = event;
+        unsafe { &*BKP::ptr() }.tpcs.modify(|_, w| w.tpie().set_bit());
+    }
+
+    /// Stop listening to tamper event by disabling the _Tamper interrupt enable
+    /// (TPIE)_ interrupt.
+    pub fn unlisten(&mut self, event: Event) {
+        let Event::Tamper = event;
+        unsafe { &*BKP::ptr() }.tpcs.modify(|_, w| w.tpie().clear_bit());
+    }
+
+    // todo: interrupt flag? event flag?
+}
+
+/// Tamper event
+pub enum Event {
+    /// Tamper occurred
+    Tamper,
 }
