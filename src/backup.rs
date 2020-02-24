@@ -4,7 +4,9 @@ use crate::pac::{BKP, PMU};
 use crate::rcu::APB1;
 use core::marker::PhantomData;
 
+/// Extension trait that constrains the `BKP` peripheral
 pub trait BkpExt {
+    /// Split the `BKP` peripheral into stand alone backup domain modules
     fn split(self, apb1: &mut APB1, pmu: &mut PMU) -> Parts;
 }
 
@@ -23,13 +25,15 @@ impl BkpExt for BKP {
             pmu.ctl.write(|w| w.bkpwen().set_bit());
         });
         Parts {
-            data: Data { _owned_ptr: PhantomData },
+            data: Data { _owned_incontinuous_storage: PhantomData },
             _todo: (),
         }
     }
 }
 
+/// `BKP` Parts
 pub struct Parts {
+    /// Backup data register 
     pub data: Data,
     _todo: (),
     // pub octl: OCTL,
@@ -37,16 +41,28 @@ pub struct Parts {
     // pub tpcs: TPCS,
 }
 
-// BKP + 0x04 to 0x28; BKP + 0x40 to 0xBC
+/// Backup data register 
+/// 
+/// Constrains all `BKP_DATAx` registers, totally 42 * `u16` _incontinuous_
+/// storages which adds up to 84 bytes. These storages may be used to save 
+/// user defined application data, and will not be reset after wake from 
+/// standby mode or power reset.
+/// 
+/// This struct is considered as an owned incontinuous storage, thus could be
+/// shared with and sent between different contexts.
+/// 
+/// _(Unverified; if there are bugs please fire an issue to let us know)_
+/// 
+/// Ref: Section 4.1 & 4.4.1, the User Manual
 pub struct Data {
-    _owned_ptr: PhantomData<*const u16>,
+    _owned_incontinuous_storage: PhantomData<[u16; 42]>,
 }
 
 impl Data {
     /// Read a 16-bit value from `BKP_DATA` backup data register. 
     /// Parameter `idx` must be a valid register index (in `[0, 41]`)
     /// for there are 42 registers in total; otherwise this function panics.
-    pub fn read(&mut self, idx: usize) -> u16 {
+    pub fn read(&self, idx: usize) -> u16 {
         unsafe { *Self::get_ptr(idx) }
     }
 
