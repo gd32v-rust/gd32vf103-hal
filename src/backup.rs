@@ -1,6 +1,6 @@
 //! (TODO) Backup register domain
 
-use crate::pac::{BKP, PMU};
+use crate::pac::{bkp, BKP, PMU};
 use crate::rcu::APB1;
 use core::marker::PhantomData;
 
@@ -27,7 +27,7 @@ impl BkpExt for BKP {
         Parts {
             data: Data { _owned_incontinuous_storage: PhantomData },
             tamper: Tamper { _ownership: () },
-            _todo: (),
+            octl: OCTL { _ownership: () },
         }
     }
 }
@@ -36,14 +36,16 @@ impl BkpExt for BKP {
 pub struct Parts {
     /// Backup data register 
     /// 
-    /// Constrains `BKP_DATAx`.
+    /// Constrains all `BKP_DATAx` (x in 0..=41).
     pub data: Data,
     /// Tamper event monitor
     /// 
     /// Constrains `BKP_TPCTL` and `BKP_TPCS`. 
     pub tamper: Tamper,
-    _todo: (),
-    // pub octl: OCTL,
+    /// RTC signal output control register
+    /// 
+    /// Constrains `BKP_OCTL`.
+    pub octl: OCTL,
 }
 
 /// Backup data register 
@@ -147,4 +149,15 @@ impl Tamper {
 pub enum Event {
     /// Tamper occurred
     Tamper,
+}
+
+/// RTC signal output control register (BKP_OCTL)
+pub struct OCTL {
+    _ownership: ()
+}
+
+impl OCTL {
+    pub(crate) fn octl(&mut self) -> &bkp::OCTL {
+        unsafe { &(*BKP::ptr()).octl }
+    }
 }
