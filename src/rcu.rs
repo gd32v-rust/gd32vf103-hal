@@ -16,12 +16,13 @@ impl RcuExt for RCU {
             apb1: APB1 { _ownership: () },
             apb2: APB2 { _ownership: () },
             ahb: AHB { _ownership: () },
-            clocks: Clocks {
+            clocks: Clocks { // todo: check code here
                 ck_sys: 8.mhz().into(),
                 ck_ahb: 8.mhz().into(),
                 ck_apb1: 8.mhz().into(),
                 ck_apb2: 8.mhz().into(),
             },
+            bdctl: BDCTL { _ownership: () },
             // ...
             _todo: (),
         }
@@ -41,14 +42,17 @@ pub struct Rcu {
     pub apb2: APB2,
     /// AHB registers
     ///
-    /// Constrains `AHBEN`
+    /// Constrains `AHBEN`.
     pub ahb: AHB,
     /// Clock configuration registers
     ///
     /// Constrains `CFG0` and `CFG1` and `CTL0`
     pub clocks: Clocks,
+    /// Backup domain control register
+    /// 
+    /// Constrains `BDCTL`.
+    pub bdctl: BDCTL,
     // ...
-    #[doc(hidden)]
     _todo: (),
 }
 
@@ -152,5 +156,16 @@ impl Clocks {
     /// Returns the freqency of the PCLK2 clock used for apb2 peripherals
     pub fn pclk2(&self) -> Hertz {
         return self.ck_apb2;
+    }
+}
+
+pub struct BDCTL {
+    _ownership: ()
+}
+
+impl BDCTL {
+    #[inline]
+    pub(crate) fn bdctl(&mut self) -> &rcu::BDCTL {
+        unsafe { &(*RCU::ptr()).bdctl }
     }
 }
