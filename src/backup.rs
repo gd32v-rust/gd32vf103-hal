@@ -1,20 +1,7 @@
 //! (TODO) Backup register domain
 
-use crate::rcu::APB1;
 use crate::pac::BKP;
-
-// frequent used trait function name:
-// - split
-// - constrain
-// - configure
-// this means all the modules should share common power switch or
-// unlock process. the function name should depends on how the
-// modules effect each other:
-// - split: modules do not inherit or depend on each other in common ways
-// - constrain: modules have some level of strong inherit in power, clock, 
-//   thus should be operated together to be functional
-// - configure: modules have weak relation with each other but still
-//   should be treated and configured together
+use crate::rcu::APB1;
 
 pub trait BkpExt {
     fn split(self, apb1: &mut APB1) -> Parts;
@@ -22,14 +9,20 @@ pub trait BkpExt {
 
 impl BkpExt for BKP {
     fn split(self, apb1: &mut APB1) -> Parts {
+        // After chip reset, all write operation to backup domain (e.g. 
+        // registers and RTC) are forbidden. To enable write access to 
+        // backup domain, first enable APB1EN's PMUEN for power and BKPIEN 
+        // for clock; then enable PMU_CTL's BKPWEN bit for write access
+        // to registers and RTC.
         riscv::interrupt::free(|_| {
             // todo:
-            // use apb1 to enable backup domain
+            // 1. use apb1 to enable backup domain (power & clock)
+            // 2. use pmuctl to enbale write access
         });
-        Parts { 
+        Parts {
             data_lo: DataLo { _ownership: () },
             data_hi: DataHi { _ownership: () },
-            _todo: ()
+            _todo: (),
         }
     }
 }
@@ -44,9 +37,9 @@ pub struct Parts {
 }
 
 pub struct DataLo {
-    _ownership: ()
+    _ownership: (),
 }
 
 pub struct DataHi {
-    _ownership: ()
+    _ownership: (),
 }

@@ -6,7 +6,7 @@ use crate::pac::FMC;
 
 #[doc(hidden)] // not finished
 pub struct Fmc {
-    fmc: FMC
+    fmc: FMC,
 }
 
 impl Fmc {

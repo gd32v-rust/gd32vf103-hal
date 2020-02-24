@@ -6,10 +6,10 @@ extern crate panic_halt;
 
 use embedded_hal::blocking::delay::DelayMs;
 use gd32vf103_hal as hal;
+use hal::ctimer;
 use hal::delay;
 use hal::pac;
 use hal::prelude::*;
-use hal::ctimer;
 use riscv_rt::entry;
 
 #[entry]

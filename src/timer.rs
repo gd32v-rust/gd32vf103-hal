@@ -1,7 +1,7 @@
 //! Timers
-use crate::time::Hertz;
 use crate::pac::TIMER6;
 use crate::rcu::{Clocks, APB1};
+use crate::time::Hertz;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::timer::CountDown;
 
@@ -11,11 +11,11 @@ pub struct Timer<TIMER> {
     timer: TIMER,
     clock_scaler: u16,
     clock_frequency: Hertz,
-} 
+}
 
 impl Timer<TIMER6> {
-    /// Initialize the timer. 
-    /// 
+    /// Initialize the timer.
+    ///
     /// An enable and reset procedure is procceed to peripheral to clean its state.
     pub fn timer6(timer: TIMER6, clock: Clocks, apb1: &mut APB1) -> Self {
         riscv::interrupt::free(|_| {
@@ -55,14 +55,16 @@ impl<T: Into<u32>> DelayMs<T> for Timer<TIMER6> {
 
 impl CountDown for Timer<TIMER6> {
     type Time = u16;
-    
+
     fn start<T>(&mut self, count: T)
     where
         T: Into<Self::Time>,
     {
         let c = count.into();
         riscv::interrupt::free(|_| {
-            self.timer.psc.write(|w| unsafe { w.psc().bits(self.clock_scaler) });
+            self.timer
+                .psc
+                .write(|w| unsafe { w.psc().bits(self.clock_scaler) });
             self.timer.intf.write(|w| w.upif().clear_bit());
             self.timer.swevg.write(|w| w.upg().set_bit());
             self.timer.intf.write(|w| w.upif().clear_bit());

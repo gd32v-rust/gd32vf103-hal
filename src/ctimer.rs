@@ -12,7 +12,7 @@ use gd32vf103_pac::CTIMER;
 // acquire model (CoreTimer is a new-type struct of CTIMER register block).
 /// CTIMER
 pub struct CoreTimer {
-    ctimer: CTIMER
+    ctimer: CTIMER,
 }
 
 impl CoreTimer {
@@ -20,7 +20,7 @@ impl CoreTimer {
         CoreTimer { ctimer }
     }
 
-    /// Release the core timer resource 
+    /// Release the core timer resource
     pub fn free(self) -> CTIMER {
         self.ctimer
     }

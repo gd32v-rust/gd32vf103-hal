@@ -24,6 +24,6 @@ fn main() -> ! {
     let a = 2.33f32;
     let s = format!("{}", a);
     // uses variant `s` so it's not optimized out
-    unsafe { asm!(""::"r"(s.len())) }; 
+    unsafe { asm!(""::"r"(s.len())) };
     loop {}
 }

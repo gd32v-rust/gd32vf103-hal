@@ -1,6 +1,6 @@
 //! Delays
-use crate::rcu::Clocks;
 use crate::ctimer::CoreTimer;
+use crate::rcu::Clocks;
 use crate::time::*;
 use embedded_hal::blocking::delay::DelayMs;
 
