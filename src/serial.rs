@@ -170,3 +170,29 @@ macro_rules! sprint {
     };
 
 }
+
+// --- //
+
+// use crate::pac::USART0;
+use crate::afio::PCF0;
+use crate::rcu::{APB2, Clocks};
+
+/// Serial abstraction
+pub struct Serial<USART, PINS> {
+    usart: USART,
+    pins: PINS,
+}
+
+impl<PINS> Serial<USART0, PINS> {
+    pub fn usart0(
+        usart0: USART0, 
+        pins: PINS,
+        pcf0: &mut PCF0,
+        // config: Config,
+        clocks: Clocks,
+        apb2: &mut APB2,
+    ) -> Self {
+        // Serial { usart: usart0, pins }
+        todo!()
+    }
+}

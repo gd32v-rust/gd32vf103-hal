@@ -118,12 +118,18 @@ impl Tamper {
         unsafe { &*BKP::ptr() }.tpctl.modify(|_, w| w.tpen().clear_bit());
     }
 
-    /// Set the TAMPER pin to active high
+    /// Set the TAMPER pin to active high. The TAMPER pin defaults to active
+    /// high after reset.
+    /// 
+    /// Ref: Section 4.4.3, the User Manual
     pub fn set_pin_active_high(&mut self) {
         unsafe { &*BKP::ptr() }.tpctl.modify(|_, w| w.tpal().clear_bit());
     }
 
-    /// Set the TAMPER pin to active low
+    /// Set the TAMPER pin to active low. The TAMPER pin defaults to active
+    /// high after reset.
+    /// 
+    /// Ref: Section 4.4.3, the User Manual
     pub fn set_pin_active_low(&mut self) {
         unsafe { &*BKP::ptr() }.tpctl.modify(|_, w| w.tpal().set_bit());
     }
