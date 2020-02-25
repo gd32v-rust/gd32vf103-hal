@@ -155,9 +155,11 @@ _gd32vf103_vectors:
 	.word     CAN1_EWMC_IRQHandler
 	.word     USBFS_IRQHandler
 
+# RISC-V defined CSR registers
 .equ mstatus, 0x300
 .equ mie, 0x304
 .equ mtvec, 0x305
+# Bumblebee core defined CSR registers
 .equ mtvt, 0x307
 .equ msubm, 0x7c4
 .equ mtvt2, 0x7ec
@@ -165,6 +167,7 @@ _gd32vf103_vectors:
 .equ pushmcause, 0x7ee
 .equ pushmepc, 0x7ef
 .equ pushmsubm, 0x7eb
+# Constants
 .equ REGBYTES,4
 .equ MSTATUS_MIE, 0x00000008
 
