@@ -24,7 +24,7 @@ fn main() -> ! {
         .into_push_pull_output(&mut gpioa.ctl0)
         .lock(&mut gpioa.lock);
     gpioa.lock.freeze();
-
+    // todo: better code
     let clocks = rcu.clocks;
     let ctimer = ctimer::CoreTimer::new(dp.CTIMER);
     let mut delay = delay::Delay::new(clocks, ctimer);

@@ -22,6 +22,7 @@ impl RcuExt for RCU {
                 ck_apb1: 8.mhz().into(),
                 ck_apb2: 8.mhz().into(),
             },
+            cfg: CFG { _ownership: () },
             bdctl: BDCTL { _ownership: () },
             // ...
             _todo: (),
@@ -47,6 +48,8 @@ pub struct Rcu {
     /// Clock configuration registers
     ///
     /// Constrains `CFG0` and `CFG1` and `CTL0`
+    pub cfg: CFG,
+    // todo: remove
     pub clocks: Clocks,
     /// Backup domain control register
     /// 
@@ -106,6 +109,13 @@ impl APB2 {
     pub(crate) fn rst(&mut self) -> &rcu::APB2RST {
         unsafe { &(*RCU::ptr()).apb2rst }
     }
+}
+
+/// Clock configuration registers
+///
+/// Constrains `CFG0` and `CFG1` and `CTL0`
+pub struct CFG {
+    _ownership: (),
 }
 
 //TODO read the registers and store in struct, rather than hardcode defaults
