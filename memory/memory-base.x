@@ -1,10 +1,5 @@
-MEMORY
-{
-    /* 87*4=348 (0x15C) */
-    VECTORS     (RX): ORIGIN = 0x08000000, LENGTH = 0x015C 
-    MAIN_FLASH  (RX): ORIGIN = 0x0800015C, LENGTH = 64K - 348
-    SRAM        (RW): ORIGIN = 0x20000000, LENGTH = 20K
-}
+/* memory-base.x (GD32VF103 linker script) */
+/* Author: Luo Jia <luojia65@hust.edu.cn> Wuhan, China 2020-2-26 */
 
 REGION_ALIAS("REGION_TEXT", MAIN_FLASH);
 REGION_ALIAS("REGION_RODATA", MAIN_FLASH);

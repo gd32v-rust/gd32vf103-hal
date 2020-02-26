@@ -27,6 +27,13 @@ panic-halt = "0.2"
 riscv-rt = "0.6"
 linked_list_allocator = "0.7"
 
+[features]
+default = ["gd32vf103x4"]
+gd32vf103x4 = []
+gd32vf103x6 = []
+gd32vf103x8 = []
+gd32vf103xb = []
+
 [profile.dev]
 codegen-units = 1
 
