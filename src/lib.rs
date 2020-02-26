@@ -51,6 +51,7 @@ pub use gd32vf103_pac as pac;
 
 pub mod afio;
 pub mod backup;
+pub mod crc;
 pub mod ctimer;
 pub mod delay;
 pub mod esig;
