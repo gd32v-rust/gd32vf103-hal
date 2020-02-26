@@ -257,7 +257,9 @@ _gd32vf103_trap_entry:
 	csrr a0, mcause
 	mv a1, sp
 # Calls the trap handler
-	call _start_trap_rust
+    # todo: should call function with signature 
+    # extern "C" fn(mcause: usize, sp: usize) -> ()
+	call _start_trap_rust # todo: replace
 # Restore mcause, mepc and msubm
 	lw a0, 19*REGBYTES(sp)
 	csrw msubm, a0
