@@ -25,11 +25,11 @@ fn main() -> ! {
         .lock(&mut gpioa.lock);
     gpioa.lock.freeze();
     // todo: better code
-    let clocks = rcu.clocks;
+    // let clocks = rcu.clocks;
     let ctimer = ctimer::CoreTimer::new(dp.CTIMER);
-    let mut delay = delay::Delay::new(clocks, ctimer);
+    // let mut delay = delay::Delay::new(clocks, ctimer);
     loop {
         pa1.toggle().unwrap();
-        delay.delay_ms(1000 as u32);
+        // delay.delay_ms(1000 as u32);
     }
 }

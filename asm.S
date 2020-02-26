@@ -186,86 +186,88 @@ _start_logical_addr:
 	jr      a0
 
 _start_bootstrap:
-    /* Initialize MTVT */
+# Initialize mtvt
     la t0, _gd32vf103_vectors
     csrw mtvt, t0
+# Initialize and enable mtvt2
     la t0, _gd32vf103_irq_entry
     csrw mtvt2, t0
     csrs mtvt2, 0x1
+# Initialize mtvec for trap & NMI base addr
     la t0, _gd32vf103_trap_entry
-    csrw mtvec, t0
-
+    csrw mtvec, t0 # todo: conflict with riscv-rt?
+# Start riscv-rt Rust entry which would check hart id,
+# allocate stack, clear bss section 
     j _start
 
 .macro SAVE_CONTEXT
 	sw ra, 0*REGBYTES(sp)
-    sw t0, 1*REGBYTES(sp)
-    sw t1, 2*REGBYTES(sp)
-    sw t2, 3*REGBYTES(sp)
-    sw t3, 4*REGBYTES(sp)
-    sw t4, 5*REGBYTES(sp)
-    sw t5, 6*REGBYTES(sp)
-    sw t6, 7*REGBYTES(sp)
-    sw a0, 8*REGBYTES(sp)
-    sw a1, 9*REGBYTES(sp)
-    sw a2, 10*REGBYTES(sp)
-    sw a3, 11*REGBYTES(sp)
-    sw a4, 12*REGBYTES(sp)
-    sw a5, 13*REGBYTES(sp)
-    sw a6, 14*REGBYTES(sp)
-    sw a7, 15*REGBYTES(sp)
+    sw tp, 1*REGBYTES(sp)
+    sw t0, 2*REGBYTES(sp)
+    sw t1, 3*REGBYTES(sp)
+    sw t2, 4*REGBYTES(sp)
+    sw t3, 5*REGBYTES(sp)
+    sw t4, 6*REGBYTES(sp)
+    sw t5, 7*REGBYTES(sp)
+    sw t6, 8*REGBYTES(sp)
+    sw a0, 9*REGBYTES(sp)
+    sw a1, 10*REGBYTES(sp)
+    sw a2, 11*REGBYTES(sp)
+    sw a3, 12*REGBYTES(sp)
+    sw a4, 13*REGBYTES(sp)
+    sw a5, 14*REGBYTES(sp)
+    sw a6, 15*REGBYTES(sp)
+    sw a7, 16*REGBYTES(sp)
 .endm
 
 .macro RESTORE_CONTEXT
 	lw ra, 0*REGBYTES(sp)
-    lw t0, 1*REGBYTES(sp)
-    lw t1, 2*REGBYTES(sp)
-    lw t2, 3*REGBYTES(sp)
-    lw t3, 4*REGBYTES(sp)
-    lw t4, 5*REGBYTES(sp)
-    lw t5, 6*REGBYTES(sp)
-    lw t6, 7*REGBYTES(sp)
-    lw a0, 8*REGBYTES(sp)
-    lw a1, 9*REGBYTES(sp)
-    lw a2, 10*REGBYTES(sp)
-    lw a3, 11*REGBYTES(sp)
-    lw a4, 12*REGBYTES(sp)
-    lw a5, 13*REGBYTES(sp)
-    lw a6, 14*REGBYTES(sp)
-    lw a7, 15*REGBYTES(sp)
-.endm
-
-.macro SAVE_EPC_STATUS
-    csrr a0, mepc  
-    sw a0,  16*REGBYTES(sp)
-    csrr a0, mstatus  
-    sw a0,  17*REGBYTES(sp)
-    csrr a0, msubm  
-    sw a0,  18*REGBYTES(sp)
-.endm
-
-.macro RESTORE_EPC_STATUS
-  lw a0, 16*REGBYTES(sp)
-  csrw mepc, a0
-  lw a0, 17*REGBYTES(sp)
-  csrw mstatus, a0
-  lw a0, 18*REGBYTES(sp)
-  csrw msubm, a0
+    lw tp, 1*REGBYTES(sp)
+    lw t0, 2*REGBYTES(sp)
+    lw t1, 3*REGBYTES(sp)
+    lw t2, 4*REGBYTES(sp)
+    lw t3, 5*REGBYTES(sp)
+    lw t4, 6*REGBYTES(sp)
+    lw t5, 7*REGBYTES(sp)
+    lw t6, 8*REGBYTES(sp)
+    lw a0, 9*REGBYTES(sp)
+    lw a1, 10*REGBYTES(sp)
+    lw a2, 11*REGBYTES(sp)
+    lw a3, 12*REGBYTES(sp)
+    lw a4, 13*REGBYTES(sp)
+    lw a5, 14*REGBYTES(sp)
+    lw a6, 15*REGBYTES(sp)
+    lw a7, 16*REGBYTES(sp)
 .endm
 
 .section .trap, "ax"
-.align 6
+.align 6 # In CLIC mode, trap entry must be 64 byte aligned
 .globl _gd32vf103_trap_entry
 .weak _gd32vf103_trap_entry
 _gd32vf103_trap_entry:
-	addi sp, sp, -20*REGBYTES
-	SAVE_CONTEXT
-    SAVE_EPC_STATUS
+# Allocate stack space
+	addi sp, sp, -19*REGBYTES
+# Save ra, tp, t*, a* registers
+	SAVE_CONTEXT # save 17 registers
+# Store mcause, mepc and msubm into memory
+	csrrwi  zero, pushmcause, 17
+	csrrwi  zero, pushmepc, 18
+	csrrwi	zero, pushmsubm, 19
+# Set the function argument of trap handler
 	csrr a0, mcause
 	mv a1, sp
+# Calls the trap handler
 	call _start_trap_rust
-    RESTORE_EPC_STATUS
-	RESTORE_CONTEXT
+# Restore mcause, mepc and msubm
+	lw a0, 19*REGBYTES(sp)
+	csrw msubm, a0
+	lw a0, 18*REGBYTES(sp)
+	csrw mepc, a0
+	lw a0, 17*REGBYTES(sp)
+	csrw mcause, a0
+# Restore ra, tp, t*, a* registers
+	RESTORE_CONTEXT # restore 17 registers
+# Free stack space
 	addi sp, sp, 20*REGBYTES
 	mret
 
@@ -274,19 +276,34 @@ _gd32vf103_trap_entry:
 .globl _gd32vf103_irq_entry
 .weak _gd32vf103_irq_entry
 _gd32vf103_irq_entry:
+# Adjust stack pointer to allocate stack space
 	addi sp, sp, -20*REGBYTES
-	SAVE_CONTEXT
+# Save ra, tp, t*, a* registers
+	SAVE_CONTEXT # save 17 registers
+# These are special CSR read operations
+# which actually uses mcause, mepc and msubm as operand 
+# to directly store it to memory (stack)
 	csrrwi  zero, pushmcause, 17
 	csrrwi  zero, pushmepc, 18
 	csrrwi	zero, pushmsubm, 19
-	csrrw ra, jalmnxti, ra
+# This special CSR read/write operation
+# It claims the CLIC to find its pending highest ID.
+# If the ID is not 0, then _automatically enable 
+# the mstatus.MIE_, and jump to its vector-entry-label, 
+# and update the link register.
+# This design targets to speed up biting tail interrupts.
+	csrrw ra, jalmnxti, ra 
+# Disable interrupts
 	csrc mstatus, MSTATUS_MIE
+# Restore mcause, mepc and msubm
 	lw a0, 19*REGBYTES(sp)
 	csrw msubm, a0
 	lw a0, 18*REGBYTES(sp)
 	csrw mepc, a0
 	lw a0, 17*REGBYTES(sp)
 	csrw mcause, a0
-	RESTORE_CONTEXT
+# Restore ra, tp, t*, a* registers
+	RESTORE_CONTEXT # restore 17 registers
+# Free stack space
 	addi sp, sp, 20*REGBYTES
 	mret
