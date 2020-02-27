@@ -62,6 +62,7 @@ pub mod serial;
 pub mod spi;
 pub mod time;
 pub mod timer;
+pub mod wdog;
 
 /// Prelude
 pub mod prelude {
@@ -75,6 +76,7 @@ pub mod prelude {
         StatefulOutputPin as _embedded_hal_digital_v2_StatefulOutputPin,
         ToggleableOutputPin as _embedded_hal_digital_v2_ToggleableOutputPin,
     };
+    pub use embedded_hal::watchdog::Watchdog as _embedded_hal_Watchdog;
 }
 
 // == Notes on prelude trait function naming:

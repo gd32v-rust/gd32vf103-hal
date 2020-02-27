@@ -20,6 +20,10 @@ pub trait U32Ext {
     fn khz(self) -> KiloHertz;
     /// Wrap in `MegaHertz`
     fn mhz(self) -> MegaHertz;
+    /// Wrap in `MilliSeconds`
+    fn ms(self) -> MilliSeconds;
+    /// Wrap in `MicroSeconds`
+    fn us(self) -> MicroSeconds;
 }
 
 impl U32Ext for u32 {
@@ -33,6 +37,14 @@ impl U32Ext for u32 {
 
     fn mhz(self) -> MegaHertz {
         MegaHertz(self)
+    }
+
+    fn ms(self) -> MilliSeconds {
+        MilliSeconds(self)
+    }
+
+    fn us(self) -> MicroSeconds {
+        MicroSeconds(self)
     }
 }
 
@@ -51,5 +63,18 @@ impl Into<Hertz> for MegaHertz {
 impl Into<KiloHertz> for MegaHertz {
     fn into(self) -> KiloHertz {
         KiloHertz(self.0 * 1_000)
+    }
+}
+
+/// Milliseconds
+pub struct MilliSeconds(pub u32);
+
+// todo: there's no need for accurate time units by now
+/// Microseconds
+pub struct MicroSeconds(pub u32);
+
+impl Into<MicroSeconds> for MilliSeconds {
+    fn into(self) -> MicroSeconds {
+        MicroSeconds(self.0 * 1_000)
     }
 }
