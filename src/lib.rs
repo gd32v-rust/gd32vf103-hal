@@ -49,6 +49,7 @@
 
 pub use gd32vf103_pac as pac;
 
+pub mod adc;
 pub mod afio;
 pub mod backup;
 pub mod crc;
@@ -77,8 +78,7 @@ pub mod prelude {
         ToggleableOutputPin as _embedded_hal_digital_v2_ToggleableOutputPin,
     };
     pub use embedded_hal::watchdog::{
-        Watchdog as _embedded_hal_Watchdog,
-        WatchdogEnable as _embedded_hal_WatchdogEnable,
+        Watchdog as _embedded_hal_Watchdog, WatchdogEnable as _embedded_hal_WatchdogEnable,
     };
 }
 

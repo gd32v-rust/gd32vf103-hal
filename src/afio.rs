@@ -9,9 +9,11 @@ pub trait AfioExt {
 
 impl AfioExt for AFIO {
     fn split(self, apb2: &mut APB2) -> Parts {
-        apb2.en().modify(|_, w| w.afen().set_bit());
-        apb2.rst().modify(|_, w| w.afrst().set_bit());
-        apb2.rst().modify(|_, w| w.afrst().clear_bit());
+        riscv::interrupt::free(|_| {
+            apb2.en().modify(|_, w| w.afen().set_bit());
+            apb2.rst().modify(|_, w| w.afrst().set_bit());
+            apb2.rst().modify(|_, w| w.afrst().clear_bit());
+        });
         Parts {
             ec: EC { _ownership: () },
             pcf0: PCF0 { _ownership: () },

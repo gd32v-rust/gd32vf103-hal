@@ -9,6 +9,8 @@
 
 This project is under early stage development; you may find example project and images [here](https://github.com/luojia65/example-gd32vf103).
 
+See also: [gd32vf103xx-hal](https://github.com/riscv-rust/gd32vf103xx-hal)
+
 ## License
 
 This project is licensed under either of

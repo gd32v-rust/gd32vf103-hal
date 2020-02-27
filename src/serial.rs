@@ -191,8 +191,13 @@ impl<PINS> Serial<USART0, PINS> {
         // config: Config,
         clocks: Clocks,
         apb2: &mut APB2,
-    ) -> Self {
+    ) -> Self
+    where
+        PINS: Pins<USART0>,
+    {
         // Serial { usart: usart0, pins }
         todo!()
     }
 }
+
+pub trait Pins<USART> {}
