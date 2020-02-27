@@ -8,12 +8,25 @@
 //! This unit uses fixed polynomial 0x4C11DB7, which is a common polynomial 
 //! used in Ethernet.
 //! 
-//! Ref: Section 8, the User Manual
+//! Ref: Section 8, the User Manual; Firmware/Source/gd32vf103_crc.c
 //! 
 //! todo: verify this module
 
 use crate::pac::CRC;
 use crate::rcu::AHB;
+
+/// Read the value of the free data register `fdata`.
+pub fn fdata_read() -> u8 {
+    // note(unsafe): separate ownership, volatile read
+    unsafe { &*CRC::ptr() }.fdata.read().fdata().bits()
+}
+
+/// Write data to the free data register `fdata`.
+pub fn fdata_write(byte: u8) {
+    // note(unsafe): separate ownership, volatile write
+    // for high 24 bits we may keep reset value
+    unsafe { &*CRC::ptr() }.fdata.modify(|_, w| unsafe { w.fdata().bits(byte) });
+}
 
 /// CRC module abstraction.
 /// 
@@ -29,6 +42,7 @@ impl Crc {
         Crc { crc }
     }
 
+    /// Create new Digest struct for CRC calculation
     pub fn new_digest(self) -> Digest {
         self.crc.ctl.modify(|_, w| w.rst().set_bit());
         // after initialization finished, hardware would set `rst` bit to `false`.
@@ -43,18 +57,24 @@ impl Crc {
     }
 }
 
+/// Digest struct for CRC calculation
 pub struct Digest {
     crc: CRC,
 }
 
 impl Digest {
+    /// Writes a single u32 into this hasher.
     pub fn write_u32(&mut self, i: u32) {
         self.crc.data.write(|w| unsafe { w.data().bits(i) });
-        // todo: wait for 4 AHB cycles?
     }
 
-    pub fn finish(self) -> (u32, Crc) {
-        let ans = self.crc.data.read().data().bits();
-        (ans, Crc { crc: self.crc })
+    /// Returns the hash value for the values written so far.
+    pub fn finish(&self) -> u32 {
+        self.crc.data.read().data().bits()
+    }
+
+    /// Frees the Digest struct to return the underlying Crc peripheral.
+    pub fn free(self) -> Crc {
+        Crc { crc: self.crc }
     }
 }
