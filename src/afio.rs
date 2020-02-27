@@ -1,7 +1,7 @@
 //! (TODO) Alternate Function I/O
 
-use crate::rcu::APB2;
 use crate::pac::AFIO;
+use crate::rcu::APB2;
 
 pub trait AfioExt {
     fn split(self, apb2: &mut APB2) -> Parts;
@@ -16,7 +16,7 @@ impl AfioExt for AFIO {
             ec: EC { _ownership: () },
             pcf0: PCF0 { _ownership: () },
             pcf1: PCF1 { _ownership: () },
-            _todo: ()
+            _todo: (),
         }
     }
 }
@@ -26,7 +26,7 @@ pub struct Parts {
     // pub extiss: ExtiSelect
     pub pcf0: PCF0,
     pub pcf1: PCF1,
-    _todo: ()
+    _todo: (),
 }
 
 pub struct EC {

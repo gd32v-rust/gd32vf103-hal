@@ -1,15 +1,15 @@
 //! (TODO) CRC calculation unit
-//! 
-//! The cyclic redundancy check (CRC) unit on GD32VF103 has 32-bit data 
-//! input and 32-bit data output. Calculation period is 4 AHB clock cycles 
-//! for 32-bit input data size from data entered to the calculation result 
+//!
+//! The cyclic redundancy check (CRC) unit on GD32VF103 has 32-bit data
+//! input and 32-bit data output. Calculation period is 4 AHB clock cycles
+//! for 32-bit input data size from data entered to the calculation result
 //! available.
-//! 
-//! This unit uses fixed polynomial 0x4C11DB7, which is a common polynomial 
+//!
+//! This unit uses fixed polynomial 0x4C11DB7, which is a common polynomial
 //! used in Ethernet.
-//! 
+//!
 //! Ref: Section 8, the User Manual; Firmware/Source/gd32vf103_crc.c
-//! 
+//!
 //! todo: verify this module
 
 use crate::pac::CRC;
@@ -25,11 +25,13 @@ pub fn fdata_read() -> u8 {
 pub fn fdata_write(byte: u8) {
     // note(unsafe): separate ownership, volatile write
     // for high 24 bits we may keep reset value
-    unsafe { &*CRC::ptr() }.fdata.modify(|_, w| unsafe { w.fdata().bits(byte) });
+    unsafe { &*CRC::ptr() }
+        .fdata
+        .modify(|_, w| unsafe { w.fdata().bits(byte) });
 }
 
 /// CRC module abstraction.
-/// 
+///
 /// Owns `CRC_DATA` and `CRC_CTL`.
 pub struct Crc {
     crc: CRC,

@@ -6,7 +6,7 @@
 
 extern crate panic_halt;
 
-use gd32vf103_hal::{pac, prelude::*, crc::Crc};
+use gd32vf103_hal::{crc::Crc, pac, prelude::*};
 
 #[riscv_rt::entry]
 fn main() -> ! {
@@ -19,10 +19,10 @@ fn main() -> ! {
     let crc = Crc::crc(dp.CRC, &mut rcu.ahb);
     let mut digest = crc.new_digest();
     digest.write_u32(src);
-    
+
     if digest.finish() == 0xF7018A40 {
         pa1.set_low().unwrap();
     }
 
-    loop { }
+    loop {}
 }

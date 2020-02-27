@@ -16,7 +16,8 @@ impl RcuExt for RCU {
             apb1: APB1 { _ownership: () },
             apb2: APB2 { _ownership: () },
             ahb: AHB { _ownership: () },
-            clocks: Clocks { // todo: check code here
+            clocks: Clocks {
+                // todo: check code here
                 ck_sys: 8.mhz().into(),
                 ck_ahb: 8.mhz().into(),
                 ck_apb1: 8.mhz().into(),
@@ -52,7 +53,7 @@ pub struct Rcu {
     // todo: remove
     pub clocks: Clocks,
     /// Backup domain control register
-    /// 
+    ///
     /// Constrains `BDCTL`.
     pub bdctl: BDCTL,
     // ...
@@ -170,7 +171,7 @@ impl Clocks {
 }
 
 pub struct BDCTL {
-    _ownership: ()
+    _ownership: (),
 }
 
 impl BDCTL {
