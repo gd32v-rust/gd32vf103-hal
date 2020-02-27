@@ -76,7 +76,10 @@ pub mod prelude {
         StatefulOutputPin as _embedded_hal_digital_v2_StatefulOutputPin,
         ToggleableOutputPin as _embedded_hal_digital_v2_ToggleableOutputPin,
     };
-    pub use embedded_hal::watchdog::Watchdog as _embedded_hal_Watchdog;
+    pub use embedded_hal::watchdog::{
+        Watchdog as _embedded_hal_Watchdog,
+        WatchdogEnable as _embedded_hal_WatchdogEnable,
+    };
 }
 
 // == Notes on prelude trait function naming:

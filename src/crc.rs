@@ -30,7 +30,7 @@ pub fn fdata_write(byte: u8) {
         .modify(|_, w| unsafe { w.fdata().bits(byte) });
 }
 
-/// CRC module abstraction.
+/// CRC module abstraction
 ///
 /// Owns `CRC_DATA` and `CRC_CTL`.
 pub struct Crc {
