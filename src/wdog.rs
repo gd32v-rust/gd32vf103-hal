@@ -20,7 +20,7 @@ const FWDGT_MAX_RLD: u16 = 0xFFF;
 /// Free Watchdog Timer (FWDGT) peripheral
 ///
 /// This watchdog timer cannot be disabled.
-/// 
+///
 /// TODO: debug
 pub struct Free {
     fwdgt: FWDGT,
@@ -93,7 +93,15 @@ impl WatchdogEnable for Free {
     {
         // prepare configurations
         let (psc, rld) = Self::calc_psc_rld(period.into().0);
+        // perform config and start process
         riscv::interrupt::free(|_| {
+            // According to the Manual, if applications need to modify the PSC and
+            // RLD registers, they should wait until PUD and RUD bit is cleared to 
+            // zero by hardware. However in watchdog start process we assume that 
+            // these two registers are not modified before thus always are zero, 
+            // we didn't check these two bits. In future designs if there could be
+            // a chance to modify the configuration after watchdog started, we 
+            // should write PUD and RUD checks into the code to prevent issues.
             self.access_protected(|fwdgt| {
                 // note(unsafe): valid values ensured by calc_psc_rld
                 fwdgt.psc.modify(|_, w| unsafe { w.psc().bits(psc) });
