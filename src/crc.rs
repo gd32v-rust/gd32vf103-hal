@@ -16,12 +16,14 @@ use crate::pac::CRC;
 use crate::rcu::AHB;
 
 /// Read the value of the free data register `fdata`.
+#[inline]
 pub fn fdata_read() -> u8 {
     // note(unsafe): separate ownership, volatile read
     unsafe { &*CRC::ptr() }.fdata.read().fdata().bits()
 }
 
 /// Write data to the free data register `fdata`.
+#[inline]
 pub fn fdata_write(byte: u8) {
     // note(unsafe): separate ownership, volatile write
     // for high 24 bits we may keep reset value
@@ -39,12 +41,14 @@ pub struct Crc {
 
 impl Crc {
     /// Take ownership of CRC and enable CRC clock.
+    #[inline]
     pub fn crc(crc: CRC, ahb: &mut AHB) -> Self {
         ahb.en().modify(|_, w| w.crcen().set_bit());
         Crc { crc }
     }
 
     /// Create new Digest struct for CRC calculation
+    #[inline]
     pub fn new_digest(self) -> Digest {
         self.crc.ctl.modify(|_, w| w.rst().set_bit());
         // after initialization finished, hardware would set `rst` bit to `false`.
@@ -53,6 +57,7 @@ impl Crc {
     }
 
     /// Disable the CRC clock and release the peripheral.
+    #[inline]
     pub fn release(self, ahb: &mut AHB) -> CRC {
         ahb.en().modify(|_, w| w.crcen().clear_bit());
         self.crc
@@ -66,16 +71,19 @@ pub struct Digest {
 
 impl Digest {
     /// Writes a single u32 into this hasher.
+    #[inline]
     pub fn write_u32(&mut self, i: u32) {
         self.crc.data.write(|w| unsafe { w.data().bits(i) });
     }
 
     /// Returns the hash value for the values written so far.
+    #[inline]
     pub fn finish(&self) -> u32 {
         self.crc.data.read().data().bits()
     }
 
     /// Frees the Digest struct to return the underlying Crc peripheral.
+    #[inline]
     pub fn free(self) -> Crc {
         Crc { crc: self.crc }
     }
