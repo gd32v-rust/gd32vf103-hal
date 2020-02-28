@@ -54,6 +54,7 @@ pub mod afio;
 pub mod backup;
 pub mod crc;
 pub mod ctimer;
+pub mod debug;
 pub mod delay;
 pub mod esig;
 pub mod fmc;
