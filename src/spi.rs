@@ -181,7 +181,7 @@ pins! {SPI2,
 }
 
 spi! {
-    SPI0: (spi0, APB2, spi0en, spi0rst, pclk2),
-    SPI1: (spi1, APB1, spi1en, spi1rst, pclk1),
-    SPI2: (spi2, APB1, spi2en, spi2rst, pclk1),
+    SPI0: (spi0, APB2, spi0en, spi0rst, ck_apb2),
+    SPI1: (spi1, APB1, spi1en, spi1rst, ck_apb1),
+    SPI2: (spi2, APB1, spi2en, spi2rst, ck_apb1),
 }
