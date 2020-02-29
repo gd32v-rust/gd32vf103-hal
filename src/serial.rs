@@ -177,6 +177,11 @@ macro_rules! sprint {
 use crate::afio::PCF0;
 use crate::rcu::{Clocks, APB2};
 
+/// Serial config
+pub struct Config {
+    
+}
+
 /// Serial abstraction
 pub struct Serial<USART, PINS> {
     usart: USART,
@@ -188,7 +193,7 @@ impl<PINS> Serial<USART0, PINS> {
         usart0: USART0,
         pins: PINS,
         pcf0: &mut PCF0,
-        // config: Config,
+        config: Config,
         clocks: Clocks,
         apb2: &mut APB2,
     ) -> Self

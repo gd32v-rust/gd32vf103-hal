@@ -15,15 +15,12 @@
 //! ```
 //! #![no_std]
 //! #![no_main]
-//!
+//! // choose a panic handler crate
 //! extern crate panic_halt;
-//!
-//! use riscv_rt::entry;
-//! use gd32vf103_hal as hal;
-//! use hal::prelude::*;
-//! use hal::pac as pac;
-//!
-//! #[entry]
+//! // include this library
+//! use gd32vf103_hal::{pac, prelude::*};
+//! // use the `riscv_rt` runtime to define entry
+//! #[riscv_rt::entry]
 //! fn main() -> ! {
 //!     // Get ownership of device peripherals
 //!     let dp = pac::Peripherals::take().unwrap();
