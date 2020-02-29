@@ -142,9 +142,9 @@ impl CFG {
 #[derive(Clone, Copy)]
 pub struct Clocks {
     ck_sys: Hertz,
-    ahb_shr: u8,
-    apb1_shr: u8,
-    apb2_shr: u8,
+    ahb_shr: u8, // [0, 9] -> [1, 512]
+    apb1_shr: u8, // [0, 4] -> [2, 16]
+    apb2_shr: u8, // [0, 4] -> [2, 16]
     usb_valid: bool,
 }
 
@@ -169,6 +169,14 @@ impl Clocks {
         Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr))
     }
 
+    /// Returns the freqency of the CK_TIMERX clock
+    pub const fn ck_timerx(&self) -> Hertz {
+        // Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr 
+        //     - if self.apb2_shr == 0 { 0 } else { 1 }))
+        Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr 
+            - [0, 1, 1, 1, 1][self.apb2_shr as usize]))
+    }
+
     /// Returns whether the CK_USBFS clock frequency is valid for the USB peripheral
     pub const fn ck_usbfs_valid(&self) -> bool {
         self.usb_valid
@@ -183,8 +191,8 @@ impl Clocks {
 /// can be strictly configurated into using input frequency values and internal clock 
 /// frequencies.
 /// 
-/// If you need to get most precise frequenct possible (other than precise value only),
-/// use configurator `Precise` instead. 
+/// If you need to get most precise frequenct possible (other than the stictly accutare
+/// value only), use configurator `Precise` instead. 
 /// 
 /// For example if 49.60MHz and 50.20MHz are able to be configurated prefectly, input 
 /// 50MHz into `Strict` would result in a panic when performing `freeze`; however input 
@@ -418,7 +426,8 @@ impl Strict {
 /// 
 /// This configurator would offer config to get the most precise output value possible 
 /// using input values. Errors between desired and actual output would be acceptible; 
-/// it would be minimized, controlled as small as possible by the algorithm. 
+/// it would be minimized by the algorithm, thus the output would be as precise as 
+/// possible. 
 pub struct Precise {
     _todo: ()
 }
