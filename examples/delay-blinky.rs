@@ -5,17 +5,11 @@
 extern crate panic_halt;
 
 use embedded_hal::blocking::delay::DelayMs;
-use gd32vf103_hal as hal;
-use hal::ctimer;
-use hal::delay;
-use hal::pac;
-use hal::prelude::*;
-use riscv_rt::entry;
+use gd32vf103_hal::{ctimer, delay, pac, prelude::*, rcu};
 
-#[entry]
+#[riscv_rt::entry]
 fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
-
     let mut rcu = dp.RCU.constrain();
 
     let mut gpioa = dp.GPIOA.split(&mut rcu.apb2);
@@ -24,12 +18,12 @@ fn main() -> ! {
         .into_push_pull_output(&mut gpioa.ctl0)
         .lock(&mut gpioa.lock);
     gpioa.lock.freeze();
-    // todo: better code
-    // let clocks = rcu.clocks;
+
+    let clocks = rcu::Strict::new().freeze(&mut rcu.cfg);
     let ctimer = ctimer::CoreTimer::new(dp.CTIMER);
-    // let mut delay = delay::Delay::new(clocks, ctimer);
+    let mut delay = delay::Delay::new(clocks, ctimer);
     loop {
         pa1.toggle().unwrap();
-        // delay.delay_ms(1000 as u32);
+        delay.delay_ms(1000u32);
     }
 }

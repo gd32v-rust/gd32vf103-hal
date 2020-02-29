@@ -202,7 +202,7 @@ fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
     };
 }
 
-// This function compiles into RV32A's `amoxor.w.aqrl` instruction to prevent data 
+// This function compiles into RV32A's `amoxor.w.aqrl` instruction to prevent data
 // race as well as optimize for speed.
 #[inline(always)]
 fn atomic_toggle_bit(r: &AtomicU32, index: usize) {
