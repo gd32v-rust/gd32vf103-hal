@@ -1,3 +1,8 @@
+// mode-after-lock-constrained.rs (Try to switch mode again after port is locked)
+// Author: luojia65 <luojia65@hust.edu.cn> Wuhan, China; 23 Nov 2019
+// Demonstrates that after port lock, pins in it cannot have their mode changed anymore
+// If uncomment second `let pa0 = pa0.into_...` line, this example would result in 
+// compile error. 
 #![no_std]
 #![no_main]
 

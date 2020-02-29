@@ -1,4 +1,5 @@
-// crc-check.rs (GD32VF103 CRC peripheral example)
+// crc-check.rs (GD32VF103 hardware implemented CRC peripheral example)
+// Feb 24 2020, author: @luojia65
 // If CRC is checked correct, LED with cathode on PA1 will be lit.
 
 #![no_std]

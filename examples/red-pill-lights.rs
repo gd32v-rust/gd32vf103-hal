@@ -1,3 +1,6 @@
+// red-pill-lights.rs (Turn on the light on PA1)
+// Author: luojia65 <luojia65@hust.edu.cn> Wuhan, China
+// This example is verified on Longan Nano board at 18 Sep 2019
 #![no_std]
 #![no_main]
 

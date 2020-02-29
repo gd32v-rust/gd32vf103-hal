@@ -1,3 +1,8 @@
+// mode-after-lock.rs (Try to switch mode again after port is locked)
+// Author: luojia65 <luojia65@hust.edu.cn> Wuhan, China; 23 Nov 2019
+// Use a debugger to see if register GPIOA_CTL0 value is changed after
+// an attempt to change them after lock process finished
+// expected output: register not changed
 #![no_std]
 #![no_main]
 
