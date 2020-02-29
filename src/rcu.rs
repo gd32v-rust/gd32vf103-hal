@@ -133,8 +133,9 @@ impl CFG {
     }
 }
 
-//TODO read the registers and store in struct, rather than hardcode defaults
-//TODO actually freeze these somehow... 
+// read the registers and store in struct, rather than hardcode defaults
+// actually freeze these somehow... 
+// done(luojia65 2020-2-29) // TODO: Verify the result
 /// Frozen clock freqencies
 ///
 /// The existence of this value indicates that the core clock
@@ -145,6 +146,7 @@ pub struct Clocks {
     ahb_shr: u8, // [0, 9] -> [1, 512]
     apb1_shr: u8, // [0, 4] -> [2, 16]
     apb2_shr: u8, // [0, 4] -> [2, 16]
+    adc_div: u8, // {2, 4, 6, 8, 12, 16}
     usb_valid: bool,
 }
 
@@ -169,12 +171,17 @@ impl Clocks {
         Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr))
     }
 
-    /// Returns the freqency of the CK_TIMERX clock
+    /// Returns the freqency of the CK_TIMERx clock
     pub const fn ck_timerx(&self) -> Hertz {
         // Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr 
         //     - if self.apb2_shr == 0 { 0 } else { 1 }))
         Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr 
             - [0, 1, 1, 1, 1][self.apb2_shr as usize]))
+    }
+
+    /// Returns the freqency of the CK_ADCx clock
+    pub const fn ck_adc(&self) -> Hertz {
+        Hertz((self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr)) / self.adc_div as u32)
     }
 
     /// Returns whether the CK_USBFS clock frequency is valid for the USB peripheral
@@ -205,6 +212,7 @@ pub struct Strict {
     target_ck_ahb: Option<NonZeroU32>,
     target_ck_apb1: Option<NonZeroU32>,
     target_ck_apb2: Option<NonZeroU32>,
+    target_ck_adc: Option<NonZeroU32>,
 }
 
 impl Strict {
@@ -217,6 +225,7 @@ impl Strict {
             target_ck_ahb: None,
             target_ck_apb1: None,
             target_ck_apb2: None,
+            target_ck_adc: None,
         }
     }
 
@@ -247,6 +256,7 @@ impl Strict {
     /// Sets the desired frequency for the CK_AHB clock
     pub fn ck_ahb(mut self, freq: impl Into<Hertz>) -> Self {
         let freq_hz = freq.into().0;
+        assert!(freq_hz <= 108_000_000); // Figure 5.2, the Manual
         self.target_ck_ahb = NonZeroU32::new(freq_hz);
         self
     }
@@ -254,6 +264,7 @@ impl Strict {
     /// Sets the desired frequency for the CK_APB1 clock
     pub fn ck_apb1(mut self, freq: impl Into<Hertz>) -> Self {
         let freq_hz = freq.into().0;
+        assert!(freq_hz <= 54_000_000); // Figure 5.2, the Manual
         self.target_ck_apb1 = NonZeroU32::new(freq_hz);
         self
     }
@@ -261,7 +272,16 @@ impl Strict {
     /// Sets the desired frequency for the CK_APB2 clock
     pub fn ck_apb2(mut self, freq: impl Into<Hertz>) -> Self {
         let freq_hz = freq.into().0;
+        assert!(freq_hz <= 108_000_000); // Figure 5.2, the Manual
         self.target_ck_apb2 = NonZeroU32::new(freq_hz);
+        self
+    }
+    
+    /// Sets the desired frequency for the CK_ADCx clock
+    pub fn ck_adc(mut self, freq: impl Into<Hertz>) -> Self {
+        let freq_hz = freq.into().0;
+        assert!(freq_hz <= 14_000_000); // Figure 5.2, the Manual
+        self.target_ck_adc = NonZeroU32::new(freq_hz);
         self
     }
     
@@ -358,6 +378,23 @@ impl Strict {
         let apb1psc = calc_psc_apbx(target_ck_apb1);
         let target_ck_apb2 = self.target_ck_apb2.map(|f| f.get()).unwrap_or(target_ck_ahb);
         let apb2psc = calc_psc_apbx(target_ck_apb2);
+        let target_ck_adc = self.target_ck_adc.map(|f| f.get()).unwrap_or(target_ck_apb2 / 8);
+        let adcpsc = 
+            if target_ck_adc * 2  == target_ck_apb2 {
+                0b000 /* alias: 0b100 */
+            } else if target_ck_adc * 4 == target_ck_apb2 {
+                0b001
+            } else if target_ck_adc * 6 == target_ck_apb2 {
+                0b010
+            } else if target_ck_adc * 8 == target_ck_apb2 {
+                0b011 /* alias: 0b110 */
+            } else if target_ck_adc * 12 == target_ck_apb2 {
+                0b101
+            } else if target_ck_adc * 16 == target_ck_apb2 {
+                0b111
+            } else {
+                panic!("invalid freqency")
+            };
         // 1. enable IRC8M 
         if self.hxtal.is_none() {
             // enable IRC8M
@@ -405,18 +442,22 @@ impl Strict {
             // adjust USB prescaler
             cfg.cfg0().modify(|_, w| unsafe { w.usbfspsc().bits(usbfspsc) });
         }
-        // 6. adjust AHB and APB clocks
         // todo: verify if three switches in one modify is okay
         cfg.cfg0().modify(|_, w| unsafe { w
+        // 6. adjust AHB and APB clocks
             .ahbpsc().bits(ahbpsc)
             .apb1psc().bits(apb1psc)
             .apb2psc().bits(apb2psc)
+        // 7. adjust ADC clocks
+            .adcpsc_2().bit(adcpsc & 0b100 != 0)
+            .adcpsc_1_0().bits(adcpsc & 0b11)
         });
         Clocks {
             ck_sys: Hertz(target_ck_sys),
             ahb_shr,
             apb1_shr: apb1psc - 0b011,
             apb2_shr: apb2psc - 0b011,
+            adc_div: (target_ck_apb2 / target_ck_adc) as u8,
             usb_valid
         }
     }
