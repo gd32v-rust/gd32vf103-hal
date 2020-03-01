@@ -176,6 +176,8 @@ macro_rules! sprint {
 // use crate::pac::USART0;
 use crate::afio::PCF0;
 use crate::rcu::{Clocks, APB2};
+use crate::gpio::{Alternate, Floating, Input, PushPull};
+use crate::gpio::gpioa::{PA9, PA10};
 
 /// Serial config
 pub struct Config {
@@ -205,4 +207,13 @@ impl<PINS> Serial<USART0, PINS> {
     }
 }
 
-pub trait Pins<USART> {}
+pub trait Pins<USART> {
+    #[doc(hidden)] // internal use only
+    const REMAP: u8;
+}
+
+impl Pins<USART0> for (PA9<Alternate<PushPull>>, PA10<Input<Floating>>) {
+    const REMAP: u8 = 0;
+}
+
+//todo

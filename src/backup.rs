@@ -72,6 +72,7 @@ impl Data {
     /// Read a 16-bit value from `BKP_DATA` backup data register.
     /// Parameter `idx` must be a valid register index (in `[0, 41]`)
     /// for there are 42 registers in total; otherwise this function panics.
+    #[inline]
     pub fn read(&self, idx: usize) -> u16 {
         unsafe { *Self::get_ptr(idx) }
     }
@@ -79,11 +80,13 @@ impl Data {
     /// Write a 16-bit value into `BKP_DATA` backup data register.
     /// Parameter `idx` must be a valid register index (in `[0, 41]`)
     /// for there are 42 registers in total; otherwise this function panics.
+    #[inline]
     pub fn write(&mut self, idx: usize, data: u16) {
         unsafe { *Self::get_ptr(idx) = data }
     }
 
     // todo: verify this function
+    #[inline]
     fn get_ptr(idx: usize) -> *mut u16 {
         if idx <= 9 {
             // data0 ..= data9
