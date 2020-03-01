@@ -22,11 +22,11 @@ fn round(n: f32) -> f32 {
 fn init_usart() {
     // enable the peripheral clock
     unsafe {
-        &(*USART0::ptr()).ctl0.modify(|r, w| {
+        (*USART0::ptr()).ctl0.modify(|r, w| {
             w.bits(r.bits()).uen().clear_bit() //disable while being configured TODO could wait for TC=1?
         });
 
-        &(*RCU::ptr()).apb2en.modify(|r, w| {
+        (*RCU::ptr()).apb2en.modify(|r, w| {
             w.bits(r.bits())
                 .usart0en()
                 .set_bit()
@@ -36,7 +36,7 @@ fn init_usart() {
                 .set_bit()
         });
 
-        &(*GPIOA::ptr()).ctl1.modify(|r, w| {
+        (*GPIOA::ptr()).ctl1.modify(|r, w| {
             w.bits(r.bits())
                 .md9()
                 .bits(0b11) //output, 50mhz
@@ -64,7 +64,7 @@ fn init_usart() {
             fra_div = 0;
         }
 
-        &(*USART0::ptr()).baud.modify(|r, w| {
+        (*USART0::ptr()).baud.modify(|r, w| {
             w.bits(r.bits())
                 .intdiv()
                 .bits(int_div as u16)
@@ -72,7 +72,7 @@ fn init_usart() {
                 .bits(fra_div as u8)
         });
 
-        &(*USART0::ptr()).ctl2.modify(|r, w| {
+        (*USART0::ptr()).ctl2.modify(|r, w| {
             w.bits(r.bits())
                 .ctsen()
                 .clear_bit() //enable CTS hardware flow control
@@ -80,7 +80,7 @@ fn init_usart() {
                 .clear_bit() //enable RTS hardware flow control
         });
 
-        &(*USART0::ptr()).ctl1.modify(|r, w| {
+        (*USART0::ptr()).ctl1.modify(|r, w| {
             w.bits(r.bits())
                 .stb()
                 .bits(0b00) //set # of stop bits = 1
@@ -88,7 +88,7 @@ fn init_usart() {
                 .clear_bit()
         });
 
-        &(*USART0::ptr()).ctl0.modify(|r, w| {
+        (*USART0::ptr()).ctl0.modify(|r, w| {
             w.bits(r.bits())
                 .wl()
                 .clear_bit() //set word size to 8
@@ -114,7 +114,7 @@ impl core::fmt::Write for SerialWrapper {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
         for &byte in s.as_bytes() {
             unsafe {
-                &(*USART0::ptr()).data.write(|w| w.data().bits(byte.into()));
+                (*USART0::ptr()).data.write(|w| w.data().bits(byte.into()));
                 while (*USART0::ptr()).stat.read().tbe().bit_is_clear() {}
             }
         }
@@ -250,7 +250,7 @@ impl<PINS> Serial<USART0, PINS> {
             usart0
                 .baud
                 .write(|w| unsafe { w.intdiv().bits(intdiv).fradiv().bits(fradiv) });
-            // todo: more config on stop bits and parity
+            // todo: more config on stop bits
 
             usart0.ctl0.modify(|_, w| {
                 // set parity check settings
@@ -264,6 +264,16 @@ impl<PINS> Serial<USART0, PINS> {
             usart: usart0,
             pins,
         }
+    }
+
+    pub fn release(self, apb2: &mut APB2) -> (USART0, PINS) {
+        // // disable the peripheral
+        // self.usart.ctl0.modify(|_, w| w.uen().clear_bit()); // todo: is this okay?
+        // disable the clock
+        apb2.en().modify(|_, w| w.usart0en().clear_bit());
+
+        // return the ownership
+        (self.usart, self.pins)
     }
 }
 

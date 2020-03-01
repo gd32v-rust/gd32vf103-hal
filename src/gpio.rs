@@ -196,10 +196,11 @@ pub trait Unlock {
 #[inline(always)]
 fn atomic_set_bit(r: &AtomicU32, is_one: bool, index: usize) {
     let mask = 1 << index;
-    match is_one {
-        true => r.fetch_or(mask, Ordering::SeqCst),
-        false => r.fetch_and(!mask, Ordering::SeqCst),
-    };
+    if is_one {
+        r.fetch_or(mask, Ordering::SeqCst);
+    } else {
+        r.fetch_and(!mask, Ordering::SeqCst);
+    }
 }
 
 // This function compiles into RV32A's `amoxor.w.aqrl` instruction to prevent data

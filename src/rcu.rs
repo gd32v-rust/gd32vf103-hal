@@ -207,6 +207,7 @@ impl Clocks {
 /// 50MHz into `Strict` would result in a panic when performing `freeze`; however input
 /// same 50MHz into `Precise` it would not panic, but would set and freeze into
 /// 50.20MHz as the frequency error is smallest.
+#[derive(Default)]
 pub struct Strict {
     hxtal: Option<NonZeroU32>,
     target_ck_sys: Option<NonZeroU32>,
@@ -303,9 +304,8 @@ impl Strict {
             (None, sys) if IRC8M == sys => (0b00, false),
             _ => (0b10, true),
         };
-        let mut pllmf = 0;
-        if use_pll {
-            pllmf = if let Some(hxtal) = self.hxtal {
+        let pllmf = if use_pll {
+            if let Some(hxtal) = self.hxtal {
                 let hxtal = hxtal.get();
                 let calc_pllmf = || {
                     for div in 1..=16 {
@@ -344,8 +344,10 @@ impl Strict {
                 } else {
                     panic!("invalid frequency")
                 }
-            };
-        } // use_pll
+            }
+        } else {
+            0 // placeholder, not use_pll
+        };
         let (ahbpsc, ahb_shr) = {
             // 0xxx: /1; 1000: /2; 1001: /4; ... 1111: /512. (skip /32)
             let mut ahb_shr = 0; // log2(1)
@@ -420,7 +422,7 @@ impl Strict {
             while cfg.ctl().read().irc8mstb().bit_is_clear() {}
         }
         // 2. enable hxtal
-        if let Some(_) = self.hxtal {
+        if self.hxtal.is_some() {
             // enable hxtal
             cfg.ctl().modify(|_, w| w.hxtalen().set_bit());
             // wait before stable
@@ -446,7 +448,7 @@ impl Strict {
         // 4. check SCS selector
         cfg.cfg0().modify(|_, w| unsafe { w.scs().bits(scs) });
         // 5. check and enable usb
-        if let Some(_) = self.hxtal {
+        if self.hxtal.is_some() {
             let ck_pll = target_ck_sys;
             let (usb_freq_okay, usbfspsc) = match ck_pll {
                 48_000_000 => (true, 0b01), // ck_pll / 1
