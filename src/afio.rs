@@ -1,6 +1,6 @@
 //! (TODO) Alternate Function I/O
 
-use crate::pac::AFIO;
+use crate::pac::{afio, AFIO};
 use crate::rcu::APB2;
 
 pub trait AfioExt {
@@ -40,6 +40,13 @@ pub struct EC {
 /// Opaque PCF0 register
 pub struct PCF0 {
     _ownership: (),
+}
+
+impl PCF0 {
+    #[inline]
+    pub(crate) fn pcf0(&mut self) -> &afio::PCF0 {
+        unsafe { &(*AFIO::ptr()).pcf0 }
+    }
 }
 
 /// Opaque PCF1 register

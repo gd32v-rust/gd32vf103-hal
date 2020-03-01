@@ -175,13 +175,38 @@ macro_rules! sprint {
 
 // use crate::pac::USART0;
 use crate::afio::PCF0;
-use crate::rcu::{Clocks, APB2};
+use crate::gpio::gpioa::{PA10, PA9};
 use crate::gpio::{Alternate, Floating, Input, PushPull};
-use crate::gpio::gpioa::{PA9, PA10};
+use crate::rcu::{Clocks, APB2};
+use crate::time::Bps;
 
 /// Serial config
 pub struct Config {
-    
+    pub baudrate: Bps,
+    pub parity: Parity,
+    // pub stop_bits
+}
+
+/// Serial parity
+pub enum Parity {
+    ParityNone,
+    ParityEven,
+    ParityOdd,
+}
+
+impl Parity {
+    // (word_length, parity_enable, parity_config)
+    // word_length: 0 => 8 bits; 1 => 9 bits
+    // parity_enable: 0 => disable; 1 => enable
+    // parity_config: 0 => odd; 1 => even
+    #[inline]
+    fn config(&self) -> (bool, bool, bool) {
+        match *self {
+            Parity::ParityNone => (false, false, false),
+            Parity::ParityEven => (true, true, false),
+            Parity::ParityOdd => (true, true, true),
+        }
+    }
 }
 
 /// Serial abstraction
@@ -202,8 +227,43 @@ impl<PINS> Serial<USART0, PINS> {
     where
         PINS: Pins<USART0>,
     {
-        // Serial { usart: usart0, pins }
-        todo!()
+        // calculate baudrate divisor fractor
+        let (intdiv, fradiv) = {
+            // use apb2 or apb1 may vary
+            // round the value to get most accurate one (without float point)
+            let baud_div = (clocks.ck_apb2().0 + config.baudrate.0 / 2) / config.baudrate.0;
+            assert!(baud_div <= 0xFFFF, "impossible baudrate");
+            ((baud_div & 0xFFF0) as u16, (baud_div & 0x0F) as u8)
+        };
+        // get parity config
+        let (wl, pcen, pm) = config.parity.config();
+        riscv::interrupt::free(|_| {
+            // enable and reset usart peripheral
+            apb2.en().modify(|_, w| w.usart0en().set_bit());
+            apb2.rst().modify(|_, w| w.usart0rst().set_bit());
+            apb2.rst().modify(|_, w| w.usart0rst().clear_bit());
+            // set serial remap
+            pcf0.pcf0()
+                .modify(|_, w| w.usart0_remap().bit(PINS::REMAP == 1));
+            // does not enable DMA in this section; DMA is enabled separately
+            // set baudrate
+            usart0
+                .baud
+                .write(|w| unsafe { w.intdiv().bits(intdiv).fradiv().bits(fradiv) });
+            // todo: more config on stop bits and parity
+
+            usart0.ctl0.modify(|_, w| {
+                // set parity check settings
+                w.wl().bit(wl).pcen().bit(pcen).pm().bit(pm);
+                // enable the peripheral
+                // todo: split receive and transmit
+                w.uen().set_bit().ren().set_bit().ten().set_bit()
+            });
+        });
+        Serial {
+            usart: usart0,
+            pins,
+        }
     }
 }
 

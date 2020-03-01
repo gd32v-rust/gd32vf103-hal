@@ -39,7 +39,7 @@ pub struct Rcu {
     /// AHB registers
     ///
     /// Constrains `AHBEN` and `AHBRST`.
-    /// 
+    ///
     /// Note: only `USBFS` AHB peripheral is able to be reset. (Section 5.3.11)
     pub ahb: AHB,
     /// Clock configuration registers
@@ -59,7 +59,7 @@ pub struct Rcu {
 /// AMBA High-performance Bus (AHB) registers
 ///
 /// Constrains `AHBEN` and `AHBRST`.
-/// 
+///
 /// Note: only `USBFS` AHB peripheral is able to be reset. (Section 5.3.11)
 pub struct AHB {
     _ownership: (),
@@ -134,7 +134,7 @@ impl CFG {
 }
 
 // read the registers and store in struct, rather than hardcode defaults
-// actually freeze these somehow... 
+// actually freeze these somehow...
 // done(luojia65 2020-2-29) // TODO: Verify the result
 /// Frozen clock freqencies
 ///
@@ -143,10 +143,10 @@ impl CFG {
 #[derive(Clone, Copy)]
 pub struct Clocks {
     ck_sys: Hertz,
-    ahb_shr: u8, // [0, 9] -> [1, 512]
+    ahb_shr: u8,  // [0, 9] -> [1, 512]
     apb1_shr: u8, // [0, 4] -> [2, 16]
     apb2_shr: u8, // [0, 4] -> [2, 16]
-    adc_div: u8, // {2, 4, 6, 8, 12, 16}
+    adc_div: u8,  // {2, 4, 6, 8, 12, 16}
     usb_valid: bool,
 }
 
@@ -155,7 +155,7 @@ impl Clocks {
     pub const fn ck_sys(&self) -> Hertz {
         self.ck_sys
     }
-    
+
     /// Returns the frequency of the AHB clock
     pub const fn ck_ahb(&self) -> Hertz {
         Hertz(self.ck_sys.0 >> self.ahb_shr)
@@ -173,10 +173,12 @@ impl Clocks {
 
     /// Returns the freqency of the CK_TIMERx clock
     pub const fn ck_timerx(&self) -> Hertz {
-        // Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr 
+        // Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr
         //     - if self.apb2_shr == 0 { 0 } else { 1 }))
-        Hertz(self.ck_sys.0 >> (self.ahb_shr + self.apb2_shr 
-            - [0, 1, 1, 1, 1][self.apb2_shr as usize]))
+        Hertz(
+            self.ck_sys.0
+                >> (self.ahb_shr + self.apb2_shr - [0, 1, 1, 1, 1][self.apb2_shr as usize]),
+        )
     }
 
     /// Returns the freqency of the CK_ADCx clock
@@ -191,19 +193,19 @@ impl Clocks {
 }
 
 /// Strict clock configurator
-/// 
-/// This configurator only accepts strictly accurate value. If all available frequency 
+///
+/// This configurator only accepts strictly accurate value. If all available frequency
 /// values after configurated does not strictly equal to the desired value, the `freeze`
-/// function panics. Users must be careful to ensure that the output frequency values 
-/// can be strictly configurated into using input frequency values and internal clock 
+/// function panics. Users must be careful to ensure that the output frequency values
+/// can be strictly configurated into using input frequency values and internal clock
 /// frequencies.
-/// 
+///
 /// If you need to get most precise frequenct possible (other than the stictly accutare
-/// value only), use configurator `Precise` instead. 
-/// 
-/// For example if 49.60MHz and 50.20MHz are able to be configurated prefectly, input 
-/// 50MHz into `Strict` would result in a panic when performing `freeze`; however input 
-/// same 50MHz into `Precise` it would not panic, but would set and freeze into 
+/// value only), use configurator `Precise` instead.
+///
+/// For example if 49.60MHz and 50.20MHz are able to be configurated prefectly, input
+/// 50MHz into `Strict` would result in a panic when performing `freeze`; however input
+/// same 50MHz into `Precise` it would not panic, but would set and freeze into
 /// 50.20MHz as the frequency error is smallest.
 pub struct Strict {
     hxtal: Option<NonZeroU32>,
@@ -276,7 +278,7 @@ impl Strict {
         self.target_ck_apb2 = NonZeroU32::new(freq_hz);
         self
     }
-    
+
     /// Sets the desired frequency for the CK_ADCx clock
     pub fn ck_adc(mut self, freq: impl Into<Hertz>) -> Self {
         let freq_hz = freq.into().0;
@@ -284,12 +286,12 @@ impl Strict {
         self.target_ck_adc = NonZeroU32::new(freq_hz);
         self
     }
-    
-    /// Calculate and balance clock registers to configure into the given clock value. 
-    /// 
+
+    /// Calculate and balance clock registers to configure into the given clock value.
+    ///
     /// # Panics
-    /// 
-    /// If strictly accurate value of given `ck_sys` etc. is not reachable, this function 
+    ///
+    /// If strictly accurate value of given `ck_sys` etc. is not reachable, this function
     /// panics.
     pub fn freeze(self, cfg: &mut CFG) -> Clocks {
         const IRC8M: u32 = 8_000_000;
@@ -307,8 +309,8 @@ impl Strict {
                 let hxtal = hxtal.get();
                 let calc_pllmf = || {
                     for div in 1..=16 {
-                        if target_ck_sys == hxtal * 13 / 2 { // 6.5
-                            return 0b01101;
+                        if target_ck_sys == hxtal * 13 / 2 {
+                            return 0b01101; // 6.5
                         }
                         let mul = target_ck_sys / (div * hxtal);
                         if mul < 2 || mul > 32 || mul == 15 {
@@ -318,22 +320,27 @@ impl Strict {
                         if out_ck_sys == target_ck_sys {
                             return if mul <= 14 { mul - 2 } else { mul - 1 };
                         }
-                    };
+                    }
                     panic!("invalid frequency")
                 };
                 calc_pllmf() as u8
-            } else { // does not use HXTAL
+            } else {
+                // does not use HXTAL
                 let pllsel0_src = IRC8M / 2;
                 let mul_pllmf = target_ck_sys / pllsel0_src;
                 // pllmf: 00000 => 2, 00001 => 3, ..., 01100 => 14; 01101 => 6.5;
-                // 01111 => 16, 10000 => 17, ..., 11111 => 32; 
+                // 01111 => 16, 10000 => 17, ..., 11111 => 32;
                 // may use 6.5 here
                 let mul_pllmf = u32::max(2, u32::min(mul_pllmf, 32));
-                if target_ck_sys == mul_pllmf * pllsel0_src { 
+                if target_ck_sys == mul_pllmf * pllsel0_src {
                     // use 2..=14 | 16..=32
-                    (if mul_pllmf <= 14 { mul_pllmf - 2 } else { mul_pllmf - 1 }) as u8
+                    (if mul_pllmf <= 14 {
+                        mul_pllmf - 2
+                    } else {
+                        mul_pllmf - 1
+                    }) as u8
                 } else if target_ck_sys == pllsel0_src * 13 / 2 {
-                    0b01101 as u8// use special 6.5 multiplier
+                    0b01101 as u8 // use special 6.5 multiplier
                 } else {
                     panic!("invalid frequency")
                 }
@@ -344,13 +351,15 @@ impl Strict {
             let mut ahb_shr = 0; // log2(1)
             let mut ans = 0b0111u8;
             let mut target_freq = target_ck_ahb;
-            while ahb_shr <= 9 { // log2(512)
+            while ahb_shr <= 9 {
+                // log2(512)
                 if ahb_shr != 5 && target_freq == target_ck_sys {
                     break;
                 }
                 target_freq *= 2;
                 ahb_shr += 1;
-                if ahb_shr != 5 { // log2(32)
+                if ahb_shr != 5 {
+                    // log2(32)
                     ans += 1;
                 }
             }
@@ -374,33 +383,41 @@ impl Strict {
             };
             ans
         };
-        let target_ck_apb1 = self.target_ck_apb1.map(|f| f.get()).unwrap_or(target_ck_ahb / 2);
+        let target_ck_apb1 = self
+            .target_ck_apb1
+            .map(|f| f.get())
+            .unwrap_or(target_ck_ahb / 2);
         let apb1psc = calc_psc_apbx(target_ck_apb1);
-        let target_ck_apb2 = self.target_ck_apb2.map(|f| f.get()).unwrap_or(target_ck_ahb);
+        let target_ck_apb2 = self
+            .target_ck_apb2
+            .map(|f| f.get())
+            .unwrap_or(target_ck_ahb);
         let apb2psc = calc_psc_apbx(target_ck_apb2);
-        let target_ck_adc = self.target_ck_adc.map(|f| f.get()).unwrap_or(target_ck_apb2 / 8);
-        let adcpsc = 
-            if target_ck_adc * 2  == target_ck_apb2 {
-                0b000 /* alias: 0b100 */
-            } else if target_ck_adc * 4 == target_ck_apb2 {
-                0b001
-            } else if target_ck_adc * 6 == target_ck_apb2 {
-                0b010
-            } else if target_ck_adc * 8 == target_ck_apb2 {
-                0b011 /* alias: 0b110 */
-            } else if target_ck_adc * 12 == target_ck_apb2 {
-                0b101
-            } else if target_ck_adc * 16 == target_ck_apb2 {
-                0b111
-            } else {
-                panic!("invalid freqency")
-            };
-        // 1. enable IRC8M 
+        let target_ck_adc = self
+            .target_ck_adc
+            .map(|f| f.get())
+            .unwrap_or(target_ck_apb2 / 8);
+        let adcpsc = if target_ck_adc * 2 == target_ck_apb2 {
+            0b000 /* alias: 0b100 */
+        } else if target_ck_adc * 4 == target_ck_apb2 {
+            0b001
+        } else if target_ck_adc * 6 == target_ck_apb2 {
+            0b010
+        } else if target_ck_adc * 8 == target_ck_apb2 {
+            0b011 /* alias: 0b110 */
+        } else if target_ck_adc * 12 == target_ck_apb2 {
+            0b101
+        } else if target_ck_adc * 16 == target_ck_apb2 {
+            0b111
+        } else {
+            panic!("invalid freqency")
+        };
+        // 1. enable IRC8M
         if self.hxtal.is_none() {
             // enable IRC8M
-            cfg.ctl().modify(|_, w| w.irc8men().set_bit()); 
+            cfg.ctl().modify(|_, w| w.irc8men().set_bit());
             // Wait for oscillator to stabilize
-            while cfg.ctl().read().irc8mstb().bit_is_clear() {} 
+            while cfg.ctl().read().irc8mstb().bit_is_clear() {}
         }
         // 2. enable hxtal
         if let Some(_) = self.hxtal {
@@ -411,12 +428,12 @@ impl Strict {
         }
         // 3. enable pll
         if use_pll {
-            cfg.cfg0().modify(|_, w| unsafe { w
+            cfg.cfg0().modify(|_, w| unsafe {
                 // Configure PLL input selector
-                .pllsel().bit(use_pll)
+                w.pllsel().bit(use_pll);
                 // Configure PLL multiplier
-                .pllmf_4().bit(pllmf & 0x10 != 0)
-                .pllmf_3_0().bits(pllmf & 0xf)
+                w.pllmf_4().bit(pllmf & 0x10 != 0);
+                w.pllmf_3_0().bits(pllmf & 0xf)
             });
             // Enable PLL
             cfg.ctl().modify(|_, w| w.pllen().set_bit());
@@ -440,17 +457,18 @@ impl Strict {
             };
             usb_valid = usb_freq_okay;
             // adjust USB prescaler
-            cfg.cfg0().modify(|_, w| unsafe { w.usbfspsc().bits(usbfspsc) });
+            cfg.cfg0()
+                .modify(|_, w| unsafe { w.usbfspsc().bits(usbfspsc) });
         }
         // todo: verify if three switches in one modify is okay
-        cfg.cfg0().modify(|_, w| unsafe { w
-        // 6. adjust AHB and APB clocks
-            .ahbpsc().bits(ahbpsc)
-            .apb1psc().bits(apb1psc)
-            .apb2psc().bits(apb2psc)
-        // 7. adjust ADC clocks
-            .adcpsc_2().bit(adcpsc & 0b100 != 0)
-            .adcpsc_1_0().bits(adcpsc & 0b11)
+        cfg.cfg0().modify(|_, w| unsafe {
+            // 6. adjust AHB and APB clocks
+            w.ahbpsc().bits(ahbpsc);
+            w.apb1psc().bits(apb1psc);
+            w.apb2psc().bits(apb2psc);
+            // 7. adjust ADC clocks
+            w.adcpsc_2().bit(adcpsc & 0b100 != 0);
+            w.adcpsc_1_0().bits(adcpsc & 0b11)
         });
         Clocks {
             ck_sys: Hertz(target_ck_sys),
@@ -458,19 +476,19 @@ impl Strict {
             apb1_shr: apb1psc - 0b011,
             apb2_shr: apb2psc - 0b011,
             adc_div: (target_ck_apb2 / target_ck_adc) as u8,
-            usb_valid
+            usb_valid,
         }
     }
 }
 
 /// (TODO) Precise clock configurator
-/// 
-/// This configurator would offer config to get the most precise output value possible 
-/// using input values. Errors between desired and actual output would be acceptible; 
-/// it would be minimized by the algorithm, thus the output would be as precise as 
-/// possible. 
+///
+/// This configurator would offer config to get the most precise output value possible
+/// using input values. Errors between desired and actual output would be acceptible;
+/// it would be minimized by the algorithm, thus the output would be as precise as
+/// possible.
 pub struct Precise {
-    _todo: ()
+    _todo: (),
 }
 
 /// Opaque `BDCTL` register

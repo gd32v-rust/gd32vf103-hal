@@ -78,3 +78,6 @@ impl Into<MicroSeconds> for MilliSeconds {
         MicroSeconds(self.0 * 1_000)
     }
 }
+
+/// Bits per second
+pub struct Bps(pub u32);
