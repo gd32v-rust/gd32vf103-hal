@@ -32,7 +32,8 @@ impl<T: Into<u32>> DelayMs<T> for Delay {
     // according to the clock diagram, but 2 is accurate. I suspect
     // this will need to change with further documentation updates.
     fn delay_ms(&mut self, ms: T) {
-        let count: u32 = ms.into() * (self.clock_frequency.0 / 1000 / 2);
+        // todo: verify the divide factor (/4) (luojia65) 
+        let count: u32 = ms.into() * (self.clock_frequency.0 / 1000 / 4);
         // todo: avoid using u64 values in this function
         let tmp: u64 = self.ctimer.get_value();
         let end = tmp + count as u64;
