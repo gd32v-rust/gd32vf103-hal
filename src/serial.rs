@@ -185,6 +185,7 @@ pub struct Config {
     pub baudrate: Bps,
     pub parity: Parity,
     // pub stop_bits
+    // pub flow_control
 }
 
 /// Serial parity
@@ -216,6 +217,7 @@ pub struct Serial<USART, PINS> {
 }
 
 impl<PINS> Serial<USART0, PINS> {
+    /// Power on and create serial instance
     pub fn usart0(
         usart0: USART0,
         pins: PINS,
@@ -266,9 +268,12 @@ impl<PINS> Serial<USART0, PINS> {
         }
     }
 
+    /// Power down and return ownership of owned registers
     pub fn release(self, apb2: &mut APB2) -> (USART0, PINS) {
-        // // disable the peripheral
-        // self.usart.ctl0.modify(|_, w| w.uen().clear_bit()); // todo: is this okay?
+        // disable the peripheral
+        self.usart.ctl0.modify(|_, w| 
+            w.uen().clear_bit().ren().clear_bit().ten().clear_bit()
+        ); 
         // disable the clock
         apb2.en().modify(|_, w| w.usart0en().clear_bit());
 
@@ -289,6 +294,28 @@ pub enum Error {
     Parity,
 }
 
+/// Infrared Data Association (IrDA) communication abstraction
+pub struct IrDA<USART, PINS> {
+    usart: USART,
+    pins: PINS
+}
+
+impl<PINS> IrDA<USART0, PINS> {
+    /// Power on and create IrDA instance
+    #[doc(hidden)]
+    pub fn usart0(usart0: USART0, pins: PINS, pcf0: &mut PCF0, clocks: Clocks, apb2: &mut APB2) -> Self 
+    where PINS: Pins<USART0> {
+        todo!("actual power up process");
+        Self { usart: usart0, pins }
+    }
+
+    /// Power down and return ownership of owned registers
+    #[doc(hidden)]
+    pub fn release(self) -> (USART0, PINS) {
+        todo!("actual power down");
+        (self.usart, self.pins)
+    }
+}
 
 pub trait Pins<USART> {
     #[doc(hidden)] // internal use only
