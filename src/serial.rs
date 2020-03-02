@@ -277,6 +277,19 @@ impl<PINS> Serial<USART0, PINS> {
     }
 }
 
+/// Serial error
+pub enum Error {
+    /// New data frame received while read buffer is not empty. (ORERR)
+    Overrun,
+    /// Noise detected on the RX pin when receiving a frame. (NERR)
+    Noise,
+    /// RX pin is detected low during the stop bits of a receive frame. (FERR)
+    Framing,
+    /// Parity bit of the receive frame does not match the expected parity value. (PERR)
+    Parity,
+}
+
+
 pub trait Pins<USART> {
     #[doc(hidden)] // internal use only
     const REMAP: u8;
