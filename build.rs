@@ -7,7 +7,7 @@ use std::io::Write;
 use std::path::Path;
 use std::path::PathBuf;
 
-const MISSING_CARGO_ENV: &'static str = "Missing environment variables provided by Cargo.";
+const MISSING_CARGO_ENV: &str = "Missing environment variables provided by Cargo.";
 
 /// Put the linker script somewhere the linker can find it.
 fn put_memory_x(out_dir: &str) {

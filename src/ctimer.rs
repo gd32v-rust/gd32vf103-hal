@@ -32,10 +32,10 @@ impl CoreTimer {
         let hi: u32 = self.ctimer.mtime_hi.read().bits();
         let lo: u32 = self.ctimer.mtime_lo.read().bits();
         if hi == self.ctimer.mtime_hi.read().bits() {
-            return (hi as u64) << 32 | (lo as u64);
+            (hi as u64) << 32 | (lo as u64)
         } else {
-            return (self.ctimer.mtime_hi.read().bits() as u64) << 32
-                | (self.ctimer.mtime_lo.read().bits() as u64);
+            (self.ctimer.mtime_hi.read().bits() as u64) << 32
+                | (self.ctimer.mtime_lo.read().bits() as u64)
         }
     }
 

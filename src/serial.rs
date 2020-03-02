@@ -13,9 +13,9 @@ fn round(n: f32) -> f32 {
     let int_part: i32 = n as i32; //truncate
     let fraction_part: f32 = n - int_part as f32;
     if fraction_part >= 0.5 {
-        return (int_part + 1) as f32;
+        (int_part + 1) as f32
     } else {
-        return int_part as f32;
+        int_part as f32
     }
 }
 
@@ -271,9 +271,9 @@ impl<PINS> Serial<USART0, PINS> {
     /// Power down and return ownership of owned registers
     pub fn release(self, apb2: &mut APB2) -> (USART0, PINS) {
         // disable the peripheral
-        self.usart.ctl0.modify(|_, w| 
-            w.uen().clear_bit().ren().clear_bit().ten().clear_bit()
-        ); 
+        self.usart
+            .ctl0
+            .modify(|_, w| w.uen().clear_bit().ren().clear_bit().ten().clear_bit());
         // disable the clock
         apb2.en().modify(|_, w| w.usart0en().clear_bit());
 
@@ -297,16 +297,27 @@ pub enum Error {
 /// Infrared Data Association (IrDA) communication abstraction
 pub struct IrDA<USART, PINS> {
     usart: USART,
-    pins: PINS
+    pins: PINS,
 }
 
 impl<PINS> IrDA<USART0, PINS> {
     /// Power on and create IrDA instance
     #[doc(hidden)]
-    pub fn usart0(usart0: USART0, pins: PINS, pcf0: &mut PCF0, clocks: Clocks, apb2: &mut APB2) -> Self 
-    where PINS: Pins<USART0> {
+    pub fn usart0(
+        usart0: USART0,
+        pins: PINS,
+        pcf0: &mut PCF0,
+        clocks: Clocks,
+        apb2: &mut APB2,
+    ) -> Self
+    where
+        PINS: Pins<USART0>,
+    {
         todo!("actual power up process");
-        Self { usart: usart0, pins }
+        Self {
+            usart: usart0,
+            pins,
+        }
     }
 
     /// Power down and return ownership of owned registers

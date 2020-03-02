@@ -295,6 +295,7 @@ impl Strict {
     /// If strictly accurate value of given `ck_sys` etc. is not reachable, this function
     /// panics.
     pub fn freeze(self, cfg: &mut CFG) -> Clocks {
+        // todo: this function is much too complex; consider split into independent parts
         const IRC8M: u32 = 8_000_000;
         let mut usb_valid = false;
         let target_ck_sys = self.target_ck_sys.map(|f| f.get()).unwrap_or(IRC8M);

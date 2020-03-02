@@ -24,7 +24,7 @@ impl Timer<TIMER6> {
             apb1.rst().write(|w| w.timer6rst().clear_bit());
         });
         Timer {
-            timer: timer,
+            timer,
             clock_scaler: 1000,
             clock_frequency: clock.ck_apb1(),
         }
@@ -77,9 +77,9 @@ impl CountDown for Timer<TIMER6> {
     fn wait(&mut self) -> nb::Result<(), void::Void> {
         let flag = self.timer.intf.read().upif().bit_is_set();
         if flag {
-            return Ok(());
+            Ok(())
         } else {
-            return Err(nb::Error::WouldBlock);
+            Err(nb::Error::WouldBlock)
         }
     }
 }

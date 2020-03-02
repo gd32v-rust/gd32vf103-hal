@@ -340,6 +340,7 @@ pub mod $gpiox {
         pub fn freeze(mut self) {
             let tmp = self.tmp_bits;
             let a = tmp | 0x00010000;
+            // write in special ways to lock the register
             let success = riscv::interrupt::free(|_| {
                 self.lock().write(|w| unsafe { w.bits(a) });
                 self.lock().write(|w| unsafe { w.bits(tmp) });
@@ -348,9 +349,8 @@ pub mod $gpiox {
                 let ans2 = self.lock().read().bits();
                 ans1 == 0 && ans2 & 0x00010000 != 0
             });
-            if success {
-                return;
-            } else {
+            // if success, this function returns
+            if !success {
                 panic!("the LOCK freeze process won't succeed")
             }
         }
