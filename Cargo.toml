@@ -1,6 +1,6 @@
 [package]
 name = "gd32vf103-hal"
-version = "0.0.2"
+version = "0.0.3"
 categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/luojia65/gd32vf103-hal"
 description = "Hardware abstract layer (HAL) for RISC-V microcontroller GD32VF103"
