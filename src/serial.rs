@@ -184,14 +184,17 @@ use crate::time::Bps;
 pub struct Config {
     pub baudrate: Bps,
     pub parity: Parity,
-    // pub stop_bits
+    pub stop_bits: StopBits,
     // pub flow_control
 }
 
 /// Serial parity
 pub enum Parity {
+    /// Disable parity check
     ParityNone,
+    /// Enable even parity check
     ParityEven,
+    /// Enable odd parity check
     ParityOdd,
 }
 
@@ -206,6 +209,30 @@ impl Parity {
             Parity::ParityNone => (false, false, false),
             Parity::ParityEven => (true, true, false),
             Parity::ParityOdd => (true, true, true),
+        }
+    }
+}
+
+/// Serial stop bits
+pub enum StopBits {
+    /// 1 stop bit
+    STOP1,
+    /// 0.5 stop bit
+    STOP0P5,
+    /// 2 stop bits
+    STOP2,
+    /// 1.5 stop bit
+    STOP1P5,
+}
+
+impl StopBits {
+    #[inline]
+    fn config(&self) -> u8 {
+        match *self {
+            StopBits::STOP1 => 0b00,
+            StopBits::STOP0P5 => 0b01,
+            StopBits::STOP2 => 0b10,
+            StopBits::STOP1P5 => 0b11,
         }
     }
 }
@@ -239,6 +266,8 @@ impl<PINS> Serial<USART0, PINS> {
         };
         // get parity config
         let (wl, pcen, pm) = config.parity.config();
+        // get stop bit config
+        let stb = config.stop_bits.config();
         riscv::interrupt::free(|_| {
             // enable and reset usart peripheral
             apb2.en().modify(|_, w| w.usart0en().set_bit());
@@ -252,8 +281,8 @@ impl<PINS> Serial<USART0, PINS> {
             usart0
                 .baud
                 .write(|w| unsafe { w.intdiv().bits(intdiv).fradiv().bits(fradiv) });
-            // todo: more config on stop bits
-
+            // configure stop bits
+            usart0.ctl1.modify(|_, w| unsafe { w.stb().bits(stb) });
             usart0.ctl0.modify(|_, w| {
                 // set parity check settings
                 w.wl().bit(wl).pcen().bit(pcen).pm().bit(pm);
@@ -293,6 +322,99 @@ pub enum Error {
     /// Parity bit of the receive frame does not match the expected parity value. (PERR)
     Parity,
 }
+
+impl<PINS> embedded_hal::serial::Read<u8> for Serial<USART0, PINS> {
+    type Error = Error;
+
+    fn read(&mut self) -> nb::Result<u8, Self::Error> {
+        let stat = self.usart.stat.read();
+        // the chip has already filled data buffer with input data
+        // check for errors present
+        let err = if stat.orerr().bit_is_set() {
+            Some(Error::Overrun)
+        } else if stat.nerr().bit_is_set() {
+            Some(Error::Noise)
+        } else if stat.ferr().bit_is_set() {
+            Some(Error::Framing)
+        } else if stat.perr().bit_is_set() {
+            Some(Error::Parity)
+        } else {
+            None
+        };
+
+        if let Some(err) = err {
+            // error occurred, no data is read. clean the data buffer and error flags
+            // note(unsafe): stateless register read
+            unsafe {
+                core::ptr::read_volatile(&self.usart.stat as *const _ as *const _);
+                core::ptr::read_volatile(&self.usart.data as *const _ as *const _);
+            }
+            // returns error; no data is returned
+            Err(nb::Error::Other(err))
+        } else {
+            // if a byte is available, return the byte; or the upstream should wait
+            // until a byte is ready
+            if stat.rbne().bit_is_set() {
+                // read buffer non empty, return this byte
+                Ok(unsafe { core::ptr::read_volatile(&self.usart.data as *const _ as *const _) })
+            } else {
+                // byte is not ready
+                Err(nb::Error::WouldBlock)
+            }
+        }
+    }
+}
+
+impl<PINS> embedded_hal::serial::Write<u8> for Serial<USART0, PINS> {
+    type Error = core::convert::Infallible; // !
+
+    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+        let stat = self.usart.stat.read();
+
+        if stat.tbe().bit_is_set() {
+            // NOTE(unsafe) atomic write to stateless register
+            // impossible using PAC only to write u8 value
+            unsafe {
+                // compiles into `lui a?, %hi(USART_DATA); sb a??, %lo(USART_DATA)(a?)`
+                core::ptr::write_volatile(&self.usart.data as *const _ as *mut _, byte)
+            }
+            Ok(())
+        } else {
+            // upstream should wait until end of transmit
+            Err(nb::Error::WouldBlock)
+        }
+    }
+
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
+        // if translate completed, do not wait
+        if self.usart.stat.read().tc().bit_is_set() {
+            Ok(())
+        } else {
+            // otherwise upstream should wait
+            Err(nb::Error::WouldBlock)
+        }
+    }
+}
+
+impl<PINS> core::fmt::Write for Serial<USART0, PINS> {
+    fn write_str(&mut self, s: &str) -> core::fmt::Result {
+        use embedded_hal::serial::Write;
+        s.as_bytes()
+            .iter()
+            .try_for_each(|c| nb::block!(self.write(*c)))
+            .map_err(|_| core::fmt::Error) // no write error is possible
+    }
+}
+
+// /// IrDA Config
+// pub struct IrConfig {
+//     /// If IrDA low power mode should be enabled
+//     pub low_power: bool,
+//     /// Serial baudrate
+//     pub baudrate: Bps,
+//     /// Serial parity
+//     pub parity: Parity,
+// }
 
 /// Infrared Data Association (IrDA) communication abstraction
 pub struct IrDA<USART, PINS> {
