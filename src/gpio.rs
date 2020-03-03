@@ -406,7 +406,7 @@ pub mod $gpiox {
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*$GPIOX::ptr()).octl) };
+            let r: &AtomicU32 = unsafe { &*(&(*$GPIOX::ptr()).octl as *const _ as *const _) };
             super::atomic_toggle_bit(r, self.i as usize);
             Ok(())
         }
@@ -457,7 +457,7 @@ $(
             $ctl: &mut $CTL,
             octl: &mut OCTL,
         ) -> $PXi<Input<PullDown>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
+            let r: &AtomicU32 = unsafe { &*(&octl.octl() as *const _ as *const _) };
             super::atomic_set_bit(r, false, Self::OP_LK_INDEX);
             self.into_with_ctrl_md($ctl, 0b10_00)
         }
@@ -468,7 +468,7 @@ $(
             $ctl: &mut $CTL,
             octl: &mut OCTL,
         ) -> $PXi<Input<PullUp>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(octl.octl()) };
+            let r: &AtomicU32 = unsafe { &*(&octl.octl() as *const _ as *const _) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
             self.into_with_ctrl_md($ctl, 0b10_00)
         }
@@ -575,7 +575,7 @@ $(
         /// called; see its documentation for details.
         #[inline]
         pub fn lock(self, lock: &mut LOCK) -> Locked<$PXi<MODE>> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
+            let r: &AtomicU32 = unsafe { &*(&lock.tmp_bits as *const _ as *const _) };
             super::atomic_set_bit(r, true, Self::OP_LK_INDEX);
             Locked($PXi {
                 _typestate_mode: PhantomData,
@@ -594,7 +594,7 @@ $(
         #[inline]
         fn unlock(self, lock: &mut Self::Lock) -> Self::Output {
             // set temporary bit for this pin in LOCK struct
-            let r: &AtomicU32 = unsafe { core::mem::transmute(&lock.tmp_bits) };
+            let r: &AtomicU32 = unsafe { &*(&lock.tmp_bits as *const _ as *const _) };
             super::atomic_set_bit(r, false, $i); // PXi::OP_LK_INDEX
             $PXi {
                 _typestate_mode: PhantomData,
@@ -688,7 +688,7 @@ $(
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*$GPIOX::ptr()).octl) };
+            let r: &AtomicU32 = unsafe { &*(&(*$GPIOX::ptr()).octl as *const _ as *const _) };
             super::atomic_toggle_bit(r, Self::OP_LK_INDEX);
             Ok(())
         }
@@ -698,7 +698,7 @@ $(
         type Error = Infallible;
 
         fn toggle(&mut self) -> Result<(), Self::Error> {
-            let r: &AtomicU32 = unsafe { core::mem::transmute(&(*$GPIOX::ptr()).octl) };
+            let r: &AtomicU32 = unsafe { &*(&(*$GPIOX::ptr()).octl as *const _ as *const _) };
             super::atomic_toggle_bit(r, Self::OP_LK_INDEX);
             Ok(())
         }
