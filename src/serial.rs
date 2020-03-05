@@ -175,7 +175,7 @@ macro_rules! sprint {
 
 // use crate::pac::USART0;
 use crate::afio::PCF0;
-use crate::gpio::gpioa::{PA10, PA11, PA12, PA9};
+use crate::gpio::gpioa::{PA10, PA11, PA12, PA9, PA8};
 use crate::gpio::{Alternate, Floating, Input, PushPull};
 use crate::rcu::{Clocks, APB2};
 use crate::time::Bps;
@@ -254,7 +254,7 @@ impl<PINS> Serial<USART0, PINS> {
         apb2: &mut APB2,
     ) -> Self
     where
-        PINS: Pins<USART0>,
+        PINS: Bundle<USART0>,
     {
         // calculate baudrate divisor fractor
         let (intdiv, fradiv) = {
@@ -433,7 +433,7 @@ impl<PINS> IrDA<USART0, PINS> {
         apb2: &mut APB2,
     ) -> Self
     where
-        PINS: Pins<USART0>,
+        PINS: Bundle<USART0>,
     {
         todo!("actual power up process");
         Self {
@@ -450,47 +450,60 @@ impl<PINS> IrDA<USART0, PINS> {
     }
 }
 
-pub trait Pins<USART> {
-    // private::Sealed
-    #[doc(hidden)] // internal use only
+pub trait Pins {
+    // private::Sealed; internal use only
+    #[doc(hidden)] 
     const REMAP: u8;
+    
+    type TX;
+    
+    type RX;
+
+    type RTS;
+    
+    type CTS;
+
+    type CK;
 }
 
-impl Pins<USART0> for (PA9<Alternate<PushPull>>, PA10<Input<Floating>>) {
+impl Pins for USART0 {
     const REMAP: u8 = 0;
+
+    type TX = PA9<Alternate<PushPull>>;
+    type RX = PA10<Input<Floating>>;
+    // todo: mode of PA12, PA11 and P8
+    type RTS = PA12<Alternate<PushPull>>;
+    type CTS = PA11<Alternate<PushPull>>;
+    type CK = PA8<Alternate<PushPull>>;
 }
 
 // TX, RX, RTS, CTS
-// todo: mode of PA12 and PA11
-impl Pins<USART0>
-    for (
-        PA9<Alternate<PushPull>>,
-        PA10<Input<Floating>>,
-        PA12<Alternate<PushPull>>,
-        PA11<Alternate<PushPull>>,
-    )
-{
-    const REMAP: u8 = 0;
+
+pub trait Bundle<USART: Pins> {
+    #[doc(hidden)] 
+    const REMAP: u8 = USART::REMAP;
+    #[doc(hidden)]
+    fn enable_ctl0();
+    #[doc(hidden)]
+    fn enable_ctl2();
 }
-impl Pins<USART0>
-    for (
-        PA9<Alternate<PushPull>>,
-        PA10<Input<Floating>>,
-        (),
-        PA11<Alternate<PushPull>>,
-    )
-{
-    const REMAP: u8 = 0;
+
+impl<USART: Pins> Bundle<USART> for (USART::TX, USART::RX) {
+    #[inline] fn enable_ctl0() {
+        // w.ren().set_bit().ten().set_bit()
+    }
+    #[inline] fn enable_ctl2() {
+        // w.rtsen().clear_bit().ctsen().clear_bit()
+    }
 }
-impl Pins<USART0>
-    for (
-        PA9<Alternate<PushPull>>,
-        PA10<Input<Floating>>,
-        PA12<Alternate<PushPull>>,
-        (),
-    )
-{
-    const REMAP: u8 = 0;
+
+impl<USART: Pins> Bundle<USART> for (USART::TX, USART::RX, USART::RTS, USART::CTS) {
+    #[inline] fn enable_ctl0() {
+        // w.ren().set_bit().ten().set_bit()
+    }
+    #[inline] fn enable_ctl2() {
+        // w.rtsen().set_bit().ctsen().set_bit()
+    }
 }
 
 //todo
