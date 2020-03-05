@@ -4,8 +4,7 @@
 #![no_std]
 #![no_main]
 
-extern crate panic_halt;
-
+use panic_halt as _;
 use embedded_hal::blocking::delay::DelayMs;
 use gd32vf103_hal::{ctimer, delay, pac, prelude::*, rcu};
 

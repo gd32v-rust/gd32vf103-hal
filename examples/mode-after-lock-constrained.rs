@@ -6,7 +6,7 @@
 #![no_std]
 #![no_main]
 
-extern crate panic_halt;
+use panic_halt as _;
 
 #[riscv_rt::entry]
 unsafe fn main() -> ! {

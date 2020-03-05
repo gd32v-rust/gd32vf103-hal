@@ -1,8 +1,7 @@
 #![no_std]
 #![no_main]
 
-extern crate panic_halt;
-
+use panic_halt as _;
 use gd32vf103_hal::{pac, prelude::*};
 
 #[riscv_rt::entry]

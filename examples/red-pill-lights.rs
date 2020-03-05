@@ -1,11 +1,12 @@
 // red-pill-lights.rs (Turn on the light on PA1)
 // Author: luojia65 <luojia65@hust.edu.cn> Wuhan, China
 // This example is verified on Longan Nano board at 18 Sep 2019
+// Update (2020-03-05): use Rust 2018 syntax
+
 #![no_std]
 #![no_main]
 
-extern crate panic_halt;
-
+use panic_halt as _;
 use gd32vf103_hal::{pac, prelude::*};
 
 #[riscv_rt::entry]
