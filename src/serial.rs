@@ -175,7 +175,7 @@ macro_rules! sprint {
 
 // use crate::pac::USART0;
 use crate::afio::PCF0;
-use crate::gpio::gpioa::{PA10, PA9, PA12, PA11};
+use crate::gpio::gpioa::{PA10, PA11, PA12, PA9};
 use crate::gpio::{Alternate, Floating, Input, PushPull};
 use crate::rcu::{Clocks, APB2};
 use crate::time::Bps;
@@ -450,7 +450,8 @@ impl<PINS> IrDA<USART0, PINS> {
     }
 }
 
-pub trait Pins<USART> { // private::Sealed
+pub trait Pins<USART> {
+    // private::Sealed
     #[doc(hidden)] // internal use only
     const REMAP: u8;
 }
@@ -461,15 +462,35 @@ impl Pins<USART0> for (PA9<Alternate<PushPull>>, PA10<Input<Floating>>) {
 
 // TX, RX, RTS, CTS
 // todo: mode of PA12 and PA11
-impl Pins<USART0> for (PA9<Alternate<PushPull>>, PA10<Input<Floating>>, PA12<Alternate<PushPull>>, PA11<Alternate<PushPull>>) {
+impl Pins<USART0>
+    for (
+        PA9<Alternate<PushPull>>,
+        PA10<Input<Floating>>,
+        PA12<Alternate<PushPull>>,
+        PA11<Alternate<PushPull>>,
+    )
+{
     const REMAP: u8 = 0;
 }
-impl Pins<USART0> for (PA9<Alternate<PushPull>>, PA10<Input<Floating>>, (), PA11<Alternate<PushPull>>) {
+impl Pins<USART0>
+    for (
+        PA9<Alternate<PushPull>>,
+        PA10<Input<Floating>>,
+        (),
+        PA11<Alternate<PushPull>>,
+    )
+{
     const REMAP: u8 = 0;
 }
-impl Pins<USART0> for (PA9<Alternate<PushPull>>, PA10<Input<Floating>>, PA12<Alternate<PushPull>>, ()) {
+impl Pins<USART0>
+    for (
+        PA9<Alternate<PushPull>>,
+        PA10<Input<Floating>>,
+        PA12<Alternate<PushPull>>,
+        (),
+    )
+{
     const REMAP: u8 = 0;
 }
-
 
 //todo

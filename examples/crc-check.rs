@@ -5,8 +5,8 @@
 #![no_std]
 #![no_main]
 
-use panic_halt as _;
 use gd32vf103_hal::{crc::Crc, pac, prelude::*};
+use panic_halt as _;
 
 #[riscv_rt::entry]
 fn main() -> ! {
