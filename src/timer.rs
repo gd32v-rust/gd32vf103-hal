@@ -1,7 +1,7 @@
 //! Timers
 use crate::pac::TIMER6;
 use crate::rcu::{Clocks, APB1};
-use crate::time::Hertz;
+use crate::unit::Hertz;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::timer::CountDown;
 

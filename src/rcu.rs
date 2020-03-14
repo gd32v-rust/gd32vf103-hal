@@ -1,7 +1,7 @@
 //! Reset and Control Unit
 
 use crate::pac::{rcu, RCU};
-use crate::time::*;
+use crate::unit::*;
 use core::num::NonZeroU32;
 
 /// Extension trait that constrains the `RCU` peripheral

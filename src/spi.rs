@@ -4,7 +4,7 @@ use crate::gpio::gpiob::*;
 use crate::gpio::{Alternate, Floating, Input, Output, PushPull};
 use crate::pac::{SPI0, SPI1, SPI2};
 use crate::rcu::{Clocks, APB1, APB2};
-use crate::time::Hertz;
+use crate::unit::Hertz;
 use embedded_hal::blocking::spi::*;
 use embedded_hal::spi::{FullDuplex, Mode, Phase, Polarity};
 

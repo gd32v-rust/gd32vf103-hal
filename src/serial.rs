@@ -175,10 +175,10 @@ macro_rules! sprint {
 
 // use crate::pac::USART0;
 use crate::afio::PCF0;
-use crate::gpio::gpioa::{PA10, PA11, PA12, PA9, PA8};
+use crate::gpio::gpioa::{PA10, PA11, PA12, PA8, PA9};
 use crate::gpio::{Alternate, Floating, Input, PushPull};
 use crate::rcu::{Clocks, APB2};
-use crate::time::Bps;
+use crate::unit::{Bps, U32Ext};
 
 /// Serial config
 pub struct Config {
@@ -186,6 +186,16 @@ pub struct Config {
     pub parity: Parity,
     pub stop_bits: StopBits,
     // pub flow_control
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            baudrate: 115200u32.bps(),
+            parity: Parity::ParityNone,
+            stop_bits: StopBits::STOP1,
+        }
+    }
 }
 
 /// Serial parity
@@ -312,6 +322,7 @@ impl<PINS> Serial<USART0, PINS> {
 }
 
 /// Serial error
+#[derive(Debug)]
 pub enum Error {
     /// New data frame received while read buffer is not empty. (ORERR)
     Overrun,
@@ -416,51 +427,51 @@ impl<PINS> core::fmt::Write for Serial<USART0, PINS> {
 //     pub parity: Parity,
 // }
 
-/// Infrared Data Association (IrDA) communication abstraction
-pub struct IrDA<USART, PINS> {
-    usart: USART,
-    pins: PINS,
-}
+// /// Infrared Data Association (IrDA) communication abstraction
+// pub struct IrDA<USART, PINS> {
+//     usart: USART,
+//     pins: PINS,
+// }
 
-impl<PINS> IrDA<USART0, PINS> {
-    /// Power on and create IrDA instance
-    #[doc(hidden)]
-    pub fn usart0(
-        usart0: USART0,
-        pins: PINS,
-        pcf0: &mut PCF0,
-        clocks: Clocks,
-        apb2: &mut APB2,
-    ) -> Self
-    where
-        PINS: Bundle<USART0>,
-    {
-        todo!("actual power up process");
-        Self {
-            usart: usart0,
-            pins,
-        }
-    }
+// impl<PINS> IrDA<USART0, PINS> {
+//     /// Power on and create IrDA instance
+//     #[doc(hidden)]
+//     pub fn usart0(
+//         usart0: USART0,
+//         pins: PINS,
+//         pcf0: &mut PCF0,
+//         clocks: Clocks,
+//         apb2: &mut APB2,
+//     ) -> Self
+//     where
+//         PINS: Bundle<USART0>,
+//     {
+//         todo!("actual power up process");
+//         Self {
+//             usart: usart0,
+//             pins,
+//         }
+//     }
 
-    /// Power down and return ownership of owned registers
-    #[doc(hidden)]
-    pub fn release(self) -> (USART0, PINS) {
-        todo!("actual power down");
-        (self.usart, self.pins)
-    }
-}
+//     /// Power down and return ownership of owned registers
+//     #[doc(hidden)]
+//     pub fn release(self) -> (USART0, PINS) {
+//         todo!("actual power down");
+//         (self.usart, self.pins)
+//     }
+// }
 
 pub trait Pins {
     // private::Sealed; internal use only
-    #[doc(hidden)] 
+    #[doc(hidden)]
     const REMAP: u8;
-    
+
     type TX;
-    
+
     type RX;
 
     type RTS;
-    
+
     type CTS;
 
     type CK;
@@ -480,7 +491,7 @@ impl Pins for USART0 {
 // TX, RX, RTS, CTS
 
 pub trait Bundle<USART: Pins> {
-    #[doc(hidden)] 
+    #[doc(hidden)]
     const REMAP: u8 = USART::REMAP;
     #[doc(hidden)]
     fn enable_ctl0();
@@ -489,19 +500,23 @@ pub trait Bundle<USART: Pins> {
 }
 
 impl<USART: Pins> Bundle<USART> for (USART::TX, USART::RX) {
-    #[inline] fn enable_ctl0() {
+    #[inline]
+    fn enable_ctl0() {
         // w.ren().set_bit().ten().set_bit()
     }
-    #[inline] fn enable_ctl2() {
+    #[inline]
+    fn enable_ctl2() {
         // w.rtsen().clear_bit().ctsen().clear_bit()
     }
 }
 
 impl<USART: Pins> Bundle<USART> for (USART::TX, USART::RX, USART::RTS, USART::CTS) {
-    #[inline] fn enable_ctl0() {
+    #[inline]
+    fn enable_ctl0() {
         // w.ren().set_bit().ten().set_bit()
     }
-    #[inline] fn enable_ctl2() {
+    #[inline]
+    fn enable_ctl2() {
         // w.rtsen().set_bit().ctsen().set_bit()
     }
 }

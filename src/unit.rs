@@ -1,4 +1,4 @@
-//! Time units
+//! Measurement units
 
 /// Hertz
 #[derive(Clone, Copy)]
@@ -24,6 +24,8 @@ pub trait U32Ext {
     fn ms(self) -> MilliSeconds;
     /// Wrap in `MicroSeconds`
     fn us(self) -> MicroSeconds;
+    /// Wrap in `Bps`
+    fn bps(self) -> Bps;
 }
 
 impl U32Ext for u32 {
@@ -45,6 +47,10 @@ impl U32Ext for u32 {
 
     fn us(self) -> MicroSeconds {
         MicroSeconds(self)
+    }
+
+    fn bps(self) -> Bps {
+        Bps(self)
     }
 }
 

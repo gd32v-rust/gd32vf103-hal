@@ -3,7 +3,7 @@
 //! Ref: Section 13, the User Manual
 
 use crate::pac::{FWDGT, WWDGT};
-use crate::time::MicroSeconds;
+use crate::unit::MicroSeconds;
 use embedded_hal::watchdog::{Watchdog, WatchdogEnable};
 
 // Ref: Section 13.1.4
