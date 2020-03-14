@@ -1,8 +1,8 @@
 //! CRC calculation unit
 //!
-//! The cyclic redundancy check (CRC) unit on GD32VF103 has 32-bit data
+//! The hardware cyclic redundancy check (CRC) unit on GD32VF103 has 32-bit data
 //! input and 32-bit data output. Calculation period is 4 AHB clock cycles
-//! for 32-bit input data size from data entered to the calculation result
+//! for 32-bit input data size, from data entered to the calculation result
 //! available.
 //!
 //! This unit uses fixed polynomial 0x4C11DB7, which is a common polynomial
@@ -128,7 +128,11 @@ impl Crc {
     /// Create new Digest struct for CRC calculation.
     /// 
     /// The underlying CRC buffer is cleaned to prepare for incoming values. Write
-    /// operations could be later performed using functions in `Digest`.
+    /// operations could be later performed using functions in `Digest`. You may
+    /// refer to [`digest.write_u32(value)`] for how to write the value for CRC
+    /// calculation.
+    /// 
+    /// [`digest.write_u32(value)`]: struct.Digest.html#method.write_u32
     /// 
     /// # Examples
     /// 
