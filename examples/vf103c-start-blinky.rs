@@ -20,11 +20,7 @@ fn main() -> ! {
     let mut rcu = dp.RCU.constrain();
 
     let mut gpioa = dp.GPIOA.split(&mut rcu.apb2);
-    let mut pa7 = gpioa
-        .pa7
-        .into_push_pull_output(&mut gpioa.ctl0)
-        .lock(&mut gpioa.lock);
-    gpioa.lock.freeze();
+    let mut pa7 = gpioa.pa7.into_push_pull_output(&mut gpioa.ctl0);
 
     let clocks = rcu::Strict::new().freeze(&mut rcu.cfg);
     let ctimer = ctimer::CoreTimer::new(dp.CTIMER);
