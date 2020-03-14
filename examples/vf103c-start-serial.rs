@@ -1,4 +1,4 @@
-// Author: @cculpepper, 21 Feb 2020
+// vf103c-start-serial.rs
 
 #![no_std]
 #![no_main]
@@ -13,8 +13,8 @@ fn main() -> ! {
     let mut rcu = dp.RCU.constrain();
 
     let mut gpioa = dp.GPIOA.split(&mut rcu.apb2);
-    let mut pa1 = gpioa
-        .pa1
+    let mut pa7 = gpioa
+        .pa7
         .into_push_pull_output(&mut gpioa.ctl0)
         .lock(&mut gpioa.lock);
     gpioa.lock.freeze();
@@ -23,7 +23,7 @@ fn main() -> ! {
     let ctimer = ctimer::CoreTimer::new(dp.CTIMER);
     let mut delay = delay::Delay::new(clocks, ctimer);
     loop {
-        pa1.toggle().unwrap();
+        pa7.toggle().unwrap();
         delay.delay_ms(1000u32);
     }
 }

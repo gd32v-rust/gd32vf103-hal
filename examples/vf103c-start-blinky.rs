@@ -7,7 +7,6 @@
 // Replace the `openocd.cfg` file; replace the `-expected-id` to 0x1e200a6d in line 10.
 // Then start Nuclei OpenOCD (supports RISC-V). Use `cargo run` to execute.
 
-#![feature(asm)]
 #![no_std]
 #![no_main]
 

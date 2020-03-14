@@ -6,10 +6,10 @@
             "name": "Debug GDB",
             "type": "gdb",
             "request": "attach",
-            "executable": "./target/riscv32imac-unknown-none-elf/debug/examples/blinky-mtime",
+            "executable": "./target/riscv32imac-unknown-none-elf/debug/examples/vf103c-start-blinky",
             "target": "localhost:3333",
             "cwd": "${workspaceRoot}",
-            "gdbpath": "riscv-none-embed-gdb",
+            "gdbpath": "riscv64-unknown-elf-gdb",
             "remote": true,
             "autorun": [
                 "monitor reset halt",
