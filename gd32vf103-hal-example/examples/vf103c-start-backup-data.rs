@@ -25,8 +25,6 @@ fn main() -> ! {
         .ck_sys(8.mhz())
         .freeze(&mut rcu.cfg);
 
-    let clocks = rcu::Strict::new().freeze(&mut rcu.cfg);
-
     let mut serial = Serial::usart0(
         dp.USART0,
         (pa9, pa10),
