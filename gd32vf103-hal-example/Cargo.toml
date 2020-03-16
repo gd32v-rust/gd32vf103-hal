@@ -19,7 +19,6 @@ linked_list_allocator = "0.8"
 
 [lib]
 name = "gd32vf103_hal_example"
-path = "."
 test = false
 bench = false
 
