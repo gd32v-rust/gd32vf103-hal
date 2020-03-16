@@ -10,7 +10,6 @@
 #![no_std]
 #![no_main]
 
-use embedded_hal::blocking::delay::DelayMs;
 use gd32vf103_hal::{ctimer, delay, pac, prelude::*, rcu};
 use panic_halt as _;
 

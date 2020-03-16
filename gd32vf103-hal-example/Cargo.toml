@@ -1,0 +1,22 @@
+[package]
+name = "gd32vf103-hal-example"
+version = "0.1.0"
+authors = ["luojia65 <me@luojia.cc>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gd32vf103-hal = { version = "*", path = "../gd32vf103-hal"}
+panic-halt = "0.2"
+riscv-rt = "0.6"
+nb = "0.1"
+
+[dev-dependencies]
+linked_list_allocator = "0.8"
+
+[[bin]]
+name = "gd32vf103_hal_example"
+path = "."
+test = false
+bench = false

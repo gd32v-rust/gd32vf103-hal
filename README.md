@@ -15,5 +15,5 @@ See also: [gd32vf103xx-hal](https://github.com/riscv-rust/gd32vf103xx-hal)
 
 This project is licensed under either of
 
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-- Mulan PSL v1 ([LICENSE-MULAN](LICENSE-MULAN) or http://license.coscl.org.cn/MulanPSL)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
+- Mulan PSL v1 ([LICENSE-MULAN](LICENSE-MULAN) or [http://license.coscl.org.cn/MulanPSL](http://license.coscl.org.cn/MulanPSL))

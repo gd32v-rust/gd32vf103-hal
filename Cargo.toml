@@ -1,46 +1,5 @@
-[package]
-name = "gd32vf103-hal"
-version = "0.0.3"
-categories = ["embedded", "hardware-support", "no-std"]
-repository = "https://github.com/luojia65/gd32vf103-hal"
-description = "Hardware abstract layer (HAL) for RISC-V microcontroller GD32VF103"
-documentation = "https://docs.rs/gd32vf103-hal"
-authors = ["luojia65 <me@luojia.cc>"]
-edition = "2018"
-license-file = "LICENSE-MULAN"
-readme = "README.md"
-keywords = ["riscv", "gd32v", "hal", "embedded-hal"]
-build = "build.rs"
-
-[package.metadata.docs.rs]
-# features = []
-default-target = "x86_64-unknown-linux-gnu"
-
-[dependencies]
-gd32vf103-pac = "0.2"
-embedded-hal = { version = "0.2.3", features = ["unproven"] }
-nb = "0.1"
-riscv = "0.5"
-
-[dependencies.void]
-default-features = false
-version = "1.0"
-
-[dev-dependencies]
-panic-halt = "0.2"
-riscv-rt = "0.6"
-linked_list_allocator = "0.8"
-
-[profile.dev]
-codegen-units = 1
-
-[profile.release]
-codegen-units = 1
-# Debug symbols are okay here in release; it won't be flashed into target memory
-debug = true
-lto = true
-
-[lib]
-name = "gd32vf103_hal"
-test = false
-bench = false
+[workspace]
+members = [
+    "gd32vf103-hal",
+    "gd32vf103-hal-example",
+]
