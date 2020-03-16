@@ -3,3 +3,12 @@ members = [
     "gd32vf103-hal",
     "gd32vf103-hal-example",
 ]
+
+[profile.dev]
+codegen-units = 1
+
+[profile.release]
+codegen-units = 1
+# Debug symbols are okay here in release; it won't be flashed into target memory
+debug = true
+lto = true

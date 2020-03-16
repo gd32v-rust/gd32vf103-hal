@@ -17,8 +17,10 @@ nb = "0.1"
 [dev-dependencies]
 linked_list_allocator = "0.8"
 
-[[bin]]
+[lib]
 name = "gd32vf103_hal_example"
 path = "."
 test = false
 bench = false
+
+# Profiles are on crate root toml
