@@ -198,6 +198,23 @@ impl Default for Config {
     }
 }
 
+impl Config {
+    pub fn baudrate(mut self, baudrate: Bps) -> Config {
+        self.baudrate = baudrate;
+        self
+    }
+    
+    pub fn parity(mut self, parity: Parity) -> Config {
+        self.parity = parity;
+        self
+    }
+
+    pub fn stop_bits(mut self, stop_bits: StopBits) -> Config {
+        self.stop_bits = stop_bits;
+        self
+    }
+}
+
 /// Serial parity
 pub enum Parity {
     /// Disable parity check
@@ -267,12 +284,12 @@ impl<PINS> Serial<USART0, PINS> {
         PINS: Bundle<USART0>,
     {
         // calculate baudrate divisor fractor
-        let (intdiv, fradiv) = {
+        let baud_div = {
             // use apb2 or apb1 may vary
             // round the value to get most accurate one (without float point)
             let baud_div = (clocks.ck_apb2().0 + config.baudrate.0 / 2) / config.baudrate.0;
-            assert!(baud_div <= 0xFFFF, "impossible baudrate");
-            ((baud_div & 0xFFF0) as u16, (baud_div & 0x0F) as u8)
+            assert!(baud_div >= 0x0010 && baud_div <= 0xFFFF, "impossible baudrate");
+            baud_div
         };
         // get parity config
         let (wl, pcen, pm) = config.parity.config();
@@ -290,7 +307,7 @@ impl<PINS> Serial<USART0, PINS> {
             // set baudrate
             usart0
                 .baud
-                .write(|w| unsafe { w.intdiv().bits(intdiv).fradiv().bits(fradiv) });
+                .write(|w| unsafe { w.bits(baud_div) });
             // configure stop bits
             usart0.ctl1.modify(|_, w| unsafe { w.stb().bits(stb) });
             usart0.ctl0.modify(|_, w| {
