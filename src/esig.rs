@@ -2,18 +2,21 @@
 //!
 //! Ref: Section 1.5, GD32VF103 User Manual
 //!
-//! TODO: verify all functions in this module
+//! TODO: verify unique_id in this module
 // should this module be named `signature`? this name may be too long
 
-const UNIQUE_ID: *const [u8; 96] = 0x1FFF_F7E8 as *const _;
+const UNIQUE_ID: *const [u32; 3] = 0x1FFF_F7AC as *const _;
 const MEMORY_DENSITY: *const u16 = 0x1FFF_F7E0 as *const _;
 
 /// Factory programed unique device id.
+/// 
+/// This field if 96 bits wide. It may be only read using 32-bit load
+/// procedures.
 ///
 /// According to section 1.5.2 of the Manual, this value
 /// can never be altered by user.
 #[inline]
-pub fn unique_id() -> &'static [u8; 96] {
+pub fn unique_id() -> &'static [u32; 3] {
     // note(unsafe): static read-only value
     unsafe { &*UNIQUE_ID }
 }
