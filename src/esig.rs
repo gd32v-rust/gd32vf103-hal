@@ -5,7 +5,7 @@
 //! TODO: verify unique_id in this module
 // should this module be named `signature`? this name may be too long
 
-const UNIQUE_ID: *const [u32; 3] = 0x1FFF_F7AC as *const _;
+const UNIQUE_ID: *const [u32; 3] = 0x1FFF_F7E8 as *const _;
 const MEMORY_DENSITY: *const u16 = 0x1FFF_F7E0 as *const _;
 
 /// Factory programed unique device id.
