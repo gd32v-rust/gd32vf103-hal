@@ -6,7 +6,7 @@
             "name": "Debug GDB",
             "type": "gdb",
             "request": "attach",
-            "executable": "./target/riscv32imac-unknown-none-elf/debug/examples/vf103c-start-blinky",
+            "executable": "./target/riscv32imac-unknown-none-elf/debug/examples/vf103c-start-serial",
             "target": "localhost:3333",
             "cwd": "${workspaceRoot}",
             "gdbpath": "riscv64-unknown-elf-gdb",

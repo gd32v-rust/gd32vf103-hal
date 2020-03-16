@@ -1,4 +1,3 @@
-
 target extended-remote :3333
 
 # print demangled symbols
@@ -9,7 +8,7 @@ set backtrace limit 32
 
 load
 
-break main
+break _start
 
 # start the process but immediately halt the processor
 stepi
