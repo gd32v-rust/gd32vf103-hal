@@ -85,15 +85,15 @@ impl Data {
         unsafe { *Self::get_ptr(idx) = data }
     }
 
-    // todo: verify this function
+    // address verified
     #[inline]
     fn get_ptr(idx: usize) -> *mut u16 {
         if idx <= 9 {
             // data0 ..= data9
-            unsafe { (BKP::ptr() as *mut u16).add(idx + 2) }
+            unsafe { (BKP::ptr() as *mut u8).add(idx * 0x04 + 0x04) as *mut u16 }
         } else if idx <= 41 {
             // data10 ..= data41
-            unsafe { (BKP::ptr() as *mut u16).add(idx + 8) }
+            unsafe { (BKP::ptr() as *mut u8).add((idx - 10) * 0x04 + 0x40) as *mut u16 }
         } else {
             panic!("invalid index")
         }
