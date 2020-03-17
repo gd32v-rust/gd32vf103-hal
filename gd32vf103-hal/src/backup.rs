@@ -4,6 +4,8 @@ use crate::pac::{bkp, BKP, PMU};
 use crate::rcu::APB1;
 use core::marker::PhantomData;
 
+// todo: constrain an alternate PC13 pin?
+
 /// Extension trait that constrains the `BKP` peripheral
 pub trait BkpExt {
     /// Split the `BKP` peripheral into stand alone backup domain modules
@@ -51,6 +53,7 @@ pub struct Parts {
     pub octl: OCTL,
 }
 
+// verified on GD32VF103C-START board; 2020-03-16
 /// Backup data register
 ///
 /// Constrains all `BKP_DATAx` registers, totally 42 * `u16` _incontinuous_
@@ -60,8 +63,6 @@ pub struct Parts {
 ///
 /// This struct is considered as an owned incontinuous storage, thus could be
 /// shared with and sent between different contexts.
-///
-/// _(Unverified; if there are bugs please fire an issue to let us know)_
 ///
 /// Ref: Section 4.1 & 4.4.1, the User Manual
 pub struct Data {
@@ -123,7 +124,7 @@ impl Tamper {
 
     /// Disable temper detection.
     ///
-    /// After disabled, the TEMPER pin is free for GPIO functions.
+    /// After disabled, the TAMPER pin is free for GPIO functions.
     pub fn disable(&mut self) {
         unsafe { &*BKP::ptr() }
             .tpctl
@@ -150,31 +151,45 @@ impl Tamper {
             .modify(|_, w| w.tpal().set_bit());
     }
 
-    /// Start listening to tamper event by enabling the _Tamper interrupt enable
-    /// (TPIE)_ interrupt.
-    pub fn listen(&mut self, event: Event) {
-        let Event::Tamper = event;
+    /// Check the tamper event flag by reading from `TEF` register bit.
+    pub fn check_event(&self) -> bool {
+        unsafe { &*BKP::ptr() }.tpcs.read().tef().bit()
+    }
+
+    /// Clear the tamper interrupt flag bit by writing 1 to `TER` register bit.
+    pub fn clear_event_bit(&mut self) {
+        unsafe { &*BKP::ptr() }
+            .tpcs
+            .modify(|_, w| w.ter().set_bit());
+    }
+
+    /// Enable the tamper interrupt by setting the _Tamper interrupt enable 
+    /// (TPIE)_ register bit.
+    pub fn enable_interrupt(&mut self) {
         unsafe { &*BKP::ptr() }
             .tpcs
             .modify(|_, w| w.tpie().set_bit());
     }
-
-    /// Stop listening to tamper event by disabling the _Tamper interrupt enable
-    /// (TPIE)_ interrupt.
-    pub fn unlisten(&mut self, event: Event) {
-        let Event::Tamper = event;
+    
+    /// Disable the tamper interrupt by clearing the _Tamper interrupt enable 
+    /// (TPIE)_ register bit.
+    pub fn disable_interrupt(&mut self) {
         unsafe { &*BKP::ptr() }
             .tpcs
             .modify(|_, w| w.tpie().clear_bit());
     }
 
-    // todo: interrupt flag? event flag?
-}
+    /// Check the tamper interrupt flag by reading from `TIF` register bit.
+    pub fn check_interrupt(&self) -> bool {
+        unsafe { &*BKP::ptr() }.tpcs.read().tif().bit()
+    }
 
-/// Tamper event
-pub enum Event {
-    /// Tamper occurred
-    Tamper,
+    /// Clear the tamper interrupt flag bit by writing 1 to `TIR` register bit.
+    pub fn clear_interrupt_bit(&mut self) {
+        unsafe { &*BKP::ptr() }
+            .tpcs
+            .modify(|_, w| w.tir().set_bit());
+    }
 }
 
 /// RTC signal output control register (BKP_OCTL)
@@ -183,7 +198,8 @@ pub struct OCTL {
 }
 
 impl OCTL {
-    pub(crate) fn octl(&mut self) -> &bkp::OCTL {
-        unsafe { &(*BKP::ptr()).octl }
-    }
+    // todo: use this register
+    // pub(crate) fn octl(&mut self) -> &bkp::OCTL {
+    //     unsafe { &(*BKP::ptr()).octl }
+    // }
 }

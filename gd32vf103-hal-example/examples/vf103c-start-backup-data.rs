@@ -34,6 +34,10 @@ fn main() -> ! {
         &mut rcu.apb2,
     );
 
+    bkp.tamper.set_pin_active_high();
+    bkp.tamper.clear_event_bit();
+    bkp.tamper.enable();
+
     let mut idx: usize = 0;
     let mut value: u32 = 0;
     let mut state = 0;
@@ -57,6 +61,12 @@ fn main() -> ! {
             (0, b's') => {
                 state = 30;
             },
+            (0, b'g') => {
+                state = 40;
+            },
+            (0, b'c') => {
+                state = 50;
+            },
             (0, _) => state = 20,
             (20, b'\r') | (20, b'\n') => {
                 write!(serial, "Invalid input!\r\n").ok();
@@ -69,6 +79,24 @@ fn main() -> ! {
                 err = 0;
             },
             (30, _) => {
+                state = 0;
+            }
+            (40, b'\r') | (40, b'\n') => {
+                for i in 0..42 { 
+                    bkp.data.write(i, 0x2333 + i as u16);
+                }
+                write!(serial, "All register values set!\r\n").ok();
+                state = 0;
+            },
+            (40, _) => {
+                state = 0;
+            }
+            (50, b'\r') | (50, b'\n') => {
+                bkp.tamper.clear_event_bit();
+                write!(serial, "Tamper event flag cleared!\r\n").ok();
+                state = 0;
+            },
+            (50, _) => {
                 state = 0;
             }
             (1, ch @ b'0'..=b'9') => {
@@ -113,10 +141,16 @@ fn main() -> ! {
 }
 
 fn write_help<T: Write>(out: &mut T) {
-    write!(out, "\r\n
+    write!(out, "\r
 Welcome to GD32VF103C-START BKP Data example!\r
 Type 'x' to list all BKP data register values;\r
-Type 's <id> <u16 value>' to set register value.\r\n"
+Type 's <id> <u16 value>' to set register value;\r
+Type 'g' to set all BKP data register to 0x2333 + id;\r
+Type 'c' to clear tamper event flag.\r
+\r
+Note: Tamper pin would come into effect. If you connect\r
+Pin 2 (PC13) to Pin 48, all BKP data would be cleared to 0.\r
+\r\n"
     ).ok();
 }
 
