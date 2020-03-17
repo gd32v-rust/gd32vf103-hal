@@ -13,5 +13,5 @@ codegen-units = 1
 debug = true
 lto = true
 
-[patch.crates-io]
-riscv-rt = { path = "../riscv-rt" }
+# [patch.crates-io]
+# riscv-rt = { path = "../riscv-rt" }
