@@ -12,3 +12,6 @@ codegen-units = 1
 # Debug symbols are okay here in release; it won't be flashed into target memory
 debug = true
 lto = true
+
+[patch.crates-io]
+riscv-rt = { path = "../riscv-rt" }
