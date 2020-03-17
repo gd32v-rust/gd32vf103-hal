@@ -16,6 +16,9 @@ build = "build.rs"
 # features = []
 default-target = "x86_64-unknown-linux-gnu"
 
+[features]
+inline-asm = ["riscv/inline-asm"]
+
 [dependencies]
 gd32vf103-pac = "0.2"
 embedded-hal = { version = "0.2.3", features = ["unproven"] }

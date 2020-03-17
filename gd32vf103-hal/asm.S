@@ -246,7 +246,7 @@ _start_bootstrap:
 ; .weak _gd32vf103_trap_entry
 ; _gd32vf103_trap_entry:
 .globl _start_trap
-_start_trap: ; todo: verify
+_start_trap: # todo: verify
 # Allocate stack space
 	addi sp, sp, -19*REGBYTES
 # Save ra, tp, t*, a* registers
