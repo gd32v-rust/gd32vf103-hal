@@ -241,12 +241,12 @@ _start_bootstrap:
 .endm
 
 .section .trap, "ax"
-.align 6 # In CLIC mode, trap entry must be 64 byte aligned
-; .globl _gd32vf103_trap_entry
-; .weak _gd32vf103_trap_entry
-; _gd32vf103_trap_entry:
-.globl _start_trap
-_start_trap: # todo: verify
+.p2align 6 # 4-byte aligned
+.globl _gd32vf103_trap_entry
+.weak _gd32vf103_trap_entry
+_gd32vf103_trap_entry:
+; .globl _start_trap
+; _start_trap: # todo: verify
 # Allocate stack space
 	addi sp, sp, -19*REGBYTES
 # Save ra, tp, t*, a* registers
@@ -256,12 +256,10 @@ _start_trap: # todo: verify
 	csrrwi  zero, pushmepc, 18
 	csrrwi	zero, pushmsubm, 19
 # Set the function argument of trap handler
-	csrr a0, mcause
-	mv a1, sp
-# Calls the trap handler
-    # todo: should call function with signature 
-    # extern "C" fn(mcause: usize, sp: usize) -> ()
-	call _start_trap_rust # todo: replace
+	mv a0, sp
+# Calls the trap handler (defined in riscv-rt)
+# extern "C" fn start_trap_rust(trap_frame: *const TrapFrame)
+	jal ra, _start_trap_rust
 # Restore mcause, mepc and msubm
 	lw a0, 19*REGBYTES(sp)
 	csrw msubm, a0
