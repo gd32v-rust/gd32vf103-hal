@@ -14,7 +14,7 @@ build = "build.rs"
 
 [package.metadata.docs.rs]
 # features = []
-default-target = "x86_64-unknown-linux-gnu"
+default-target = "riscv32imac-unknown-none-elf"
 
 [features]
 inline-asm = ["riscv/inline-asm"]
