@@ -152,6 +152,10 @@ impl Enable for Free<Disabled> {
     }
 }
 
+// We only implement `Watchdog` for a watchdog that is enabled.
+// Application developers may not being able to `feed` an `Free<Disabled>`.
+// In this case, developers would not forget to `enable` before feed,
+// or we would not allow developers to feed a disabled dog.
 impl Watchdog for Free<Enabled> {
     type Error = Infallible;
 
