@@ -47,7 +47,7 @@ pub struct Free<STATE> {
 impl<STATE> Free<STATE> {
     /// Wrap the watchdog
     pub fn new(fwdgt: FWDGT) -> Free<Disabled> {
-        Free { fwdgt }
+        Free { fwdgt, state: Disabled }
     }
 
     /// Returns the interval in microseconds
@@ -122,7 +122,7 @@ impl Enable for Free<Disabled> {
     type Time = MicroSeconds;
     type Target = Free<Enabled>;
 
-    fn try_start<T>(&mut self, period: T) -> Result<Free<Enabled>, Self::Error>
+    fn try_start<T>(self, period: T) -> Result<Free<Enabled>, Self::Error>
     where
         T: Into<Self::Time>,
     {
@@ -174,7 +174,7 @@ impl Watchdog for Free<Enabled> {
 //     type Error = Infallible;
 //     type Target = Free<Disabled>;
 
-//     fn try_disable(&mut self) -> Result<Self::Target, Self::Error> {
+//     fn try_disable(self) -> Result<Self::Target, Self::Error> {
 //         // There should be probable DISABLE command
 //         // Change typestate to `Disabled`
 //         Ok(Free { fwdgt: self.fwdgt, state: Disabled })
