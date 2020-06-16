@@ -4,7 +4,7 @@
 
 use crate::pac::{FWDGT, WWDGT};
 use crate::unit::MicroSeconds;
-use embedded_hal::watchdog::{Watchdog, WatchdogEnable};
+use embedded_hal::watchdog::{Watchdog, Enable, Disable};
 use core::convert::Infallible;
 
 // Ref: Section 13.1.4
@@ -18,18 +18,35 @@ const FWDGT_MAX_PSC: u8 = 0b110;
 // RLD == 0 => multiplier = 1, RLD == FFF => multiplier = 4096
 const FWDGT_MAX_RLD: u16 = 0xFFF;
 
+/*
+
+    We declare this struct Free<Enabled> and Free<Disabled> and
+    implement different traits for them.
+    However if existing designs still need old style API, they may
+    set two Target associated types to Self. Then these designs could
+    implement all trait for (e.g.) a Free struct alone.
+
+*/
+
+/// Type state struct for disabled watchdog timers.
+pub struct Disabled;
+
+/// Type state struct for enabled watchdog timers.
+pub struct Enabled;
+
 /// Free Watchdog Timer (FWDGT) peripheral
 ///
 /// This watchdog timer cannot be disabled.
 ///
 /// TODO: debug
-pub struct Free {
+pub struct Free<STATE> {
     fwdgt: FWDGT,
+    state: STATE,
 }
 
-impl Free {
+impl<STATE> Free<STATE> {
     /// Wrap the watchdog
-    pub fn new(fwdgt: FWDGT) -> Self {
+    pub fn new(fwdgt: FWDGT) -> Free<Disabled> {
         Free { fwdgt }
     }
 
@@ -45,7 +62,7 @@ impl Free {
     // todo: stop_on_debug function (DBG peripheral)
 }
 
-impl Free {
+impl<STATE> Free<STATE> {
     #[inline]
     fn rud_or_pud_updating(&self) -> bool {
         let stat = self.fwdgt.stat.read();
@@ -81,29 +98,42 @@ impl Free {
     }
 }
 
-// todo: if WatchdogEnable start returns an independent Enabled<Free>,
-// that struct could impl `configure` function to modify the period value;
-// at that time PUD and RUD bits in FWDGT_STAT register could be used.
+impl Free<Enabled> {
+    // We may set another period when watchdog is enabled
+    pub fn set_period(&mut self, period: impl Into<MicroSeconds>) {
+        let (psc, rld) = Self::calc_psc_rld(period.into().0);
+        while self.rud_or_pud_updating() {}
+        riscv::interrupt::free(|_| {
+            self.access_protected(|fwdgt| {
+                // note(unsafe): valid values ensured by calc_psc_rld
+                fwdgt.psc.modify(|_, w| unsafe { w.psc().bits(psc) });
+                fwdgt.rld.modify(|_, w| unsafe { w.rld().bits(rld) });
+            });
+            // note(unsafe): write valid command constant defined in the Manual
+            self.fwdgt
+                .ctl
+                .write(|w| unsafe { w.cmd().bits(FWDGT_CMD_RELOAD) });
+        });
+    }
+}
 
-impl WatchdogEnable for Free {
+impl Enable for Free<Disabled> {
     type Error = Infallible;
     type Time = MicroSeconds;
+    type Target = Free<Enabled>;
 
-    fn try_start<T>(&mut self, period: T) -> Result<(), Self::Error>
+    fn try_start<T>(&mut self, period: T) -> Result<Free<Enabled>, Self::Error>
     where
         T: Into<Self::Time>,
     {
         // prepare configurations
         let (psc, rld) = Self::calc_psc_rld(period.into().0);
+        // According to the Manual, if applications need to modify the PSC and
+        // RLD registers, they should wait until PUD and RUD bit is cleared to
+        // zero by hardware. (Section 13.1.4, FWDGT_RLD)
+        while self.rud_or_pud_updating() {}
         // perform config and start process
         riscv::interrupt::free(|_| {
-            // According to the Manual, if applications need to modify the PSC and
-            // RLD registers, they should wait until PUD and RUD bit is cleared to
-            // zero by hardware. However in watchdog start process we assume that
-            // these two registers are not modified before thus always are zero,
-            // we didn't check these two bits. In future designs if there could be
-            // a chance to modify the configuration after watchdog started, we
-            // should write PUD and RUD checks into the code to prevent issues.
             self.access_protected(|fwdgt| {
                 // note(unsafe): valid values ensured by calc_psc_rld
                 fwdgt.psc.modify(|_, w| unsafe { w.psc().bits(psc) });
@@ -117,11 +147,12 @@ impl WatchdogEnable for Free {
                 .ctl
                 .write(|w| unsafe { w.cmd().bits(FWDGT_CMD_ENABLE) });
         });
-        Ok(())
+        // Change typestate to `Enabled`
+        Ok(Free { fwdgt: self.fwdgt, state: Enabled })
     }
 }
 
-impl Watchdog for Free {
+impl Watchdog for Free<Enabled> {
     type Error = Infallible;
 
     fn try_feed(&mut self) -> Result<(), Self::Error> {
@@ -132,6 +163,23 @@ impl Watchdog for Free {
         Ok(())
     }
 }
+
+/*
+    GD32VF103's Free Watchdog Timer does not support disable operation.
+    We keep code here for example to show that, if there is a watchdog timer
+    that can be disabled, how could we write code for it.
+*/
+
+// impl Disable for Free<Enabled> {
+//     type Error = Infallible;
+//     type Target = Free<Disabled>;
+
+//     fn try_disable(&mut self) -> Result<Self::Target, Self::Error> {
+//         // There should be probable DISABLE command
+//         // Change typestate to `Disabled`
+//         Ok(Free { fwdgt: self.fwdgt, state: Disabled })
+//     }
+// }
 
 /// Window Watchdog Timer (WWDGT) peripheral
 pub struct Window {
