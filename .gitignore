@@ -1,5 +1,4 @@
 **/target
 **/*.rs.bk
 
-gd32vf103-hal/Cargo.lock
 /Cargo.lock
