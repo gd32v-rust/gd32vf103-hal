@@ -13,14 +13,17 @@ Matrix: [#gd32v-rust:matrix.org](https://matrix.to/#/#gd32v-rust:matrix.org)
 
 See also: [gd32vf103xx-hal](https://github.com/riscv-rust/gd32vf103xx-hal)
 
-## License
+## Use this project
 
-This project is licensed under either of
+To use this HAL project, you may need Rust installed. Checkout `rustup.rs` if you don't have one.
+You do not need to install GNU toolchain if you are an application developer.
 
-- MIT license ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
-- Mulan PSL v1 ([LICENSE-MULAN](LICENSE-MULAN) or [http://license.coscl.org.cn/MulanPSL](http://license.coscl.org.cn/MulanPSL))
+Examples may be found at [`gd32vf103-example`](https://github.com/gd32v-rust/gd32vf103-exmpale).
 
 ## Helps on assembling
+
+ALERT: this section is only for HAL project itself. If you are an application developer, you do not
+need to build this binary by yourself.
 
 The assemble script requires you have `riscv32imac-unknown-elf-gcc` installed.
 
@@ -39,3 +42,10 @@ Run assemble script: (run on any path is okay)
 ```shell
 ./assemble.sh
 ```
+
+## License
+
+This project is licensed under either of
+
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
+- Mulan PSL v1 ([LICENSE-MULAN](LICENSE-MULAN) or [http://license.coscl.org.cn/MulanPSL](http://license.coscl.org.cn/MulanPSL))
