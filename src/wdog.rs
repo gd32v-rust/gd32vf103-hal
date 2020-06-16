@@ -5,6 +5,7 @@
 use crate::pac::{FWDGT, WWDGT};
 use crate::unit::MicroSeconds;
 use embedded_hal::watchdog::{Watchdog, WatchdogEnable};
+use core::convert::Infallible;
 
 // Ref: Section 13.1.4
 const FWDGT_CMD_ENABLE: u16 = 0xCCCC;
@@ -85,9 +86,10 @@ impl Free {
 // at that time PUD and RUD bits in FWDGT_STAT register could be used.
 
 impl WatchdogEnable for Free {
+    type Error = Infallible;
     type Time = MicroSeconds;
 
-    fn start<T>(&mut self, period: T)
+    fn try_start<T>(&mut self, period: T) -> Result<(), Self::Error>
     where
         T: Into<Self::Time>,
     {
@@ -115,15 +117,19 @@ impl WatchdogEnable for Free {
                 .ctl
                 .write(|w| unsafe { w.cmd().bits(FWDGT_CMD_ENABLE) });
         });
+        Ok(())
     }
 }
 
 impl Watchdog for Free {
-    fn feed(&mut self) {
+    type Error = Infallible;
+
+    fn try_feed(&mut self) -> Result<(), Self::Error> {
         // note(unsafe): write valid command constant defined in the Manual
         self.fwdgt
             .ctl
             .write(|w| unsafe { w.cmd().bits(FWDGT_CMD_RELOAD) });
+        Ok(())
     }
 }
 

@@ -19,3 +19,23 @@ This project is licensed under either of
 
 - MIT license ([LICENSE-MIT](LICENSE-MIT) or [http://opensource.org/licenses/MIT](http://opensource.org/licenses/MIT))
 - Mulan PSL v1 ([LICENSE-MULAN](LICENSE-MULAN) or [http://license.coscl.org.cn/MulanPSL](http://license.coscl.org.cn/MulanPSL))
+
+## Helps on assembling
+
+The assemble script requires you have `riscv32imac-unknown-elf-gcc` installed.
+
+Configure and compile GNU toolchain using:
+
+```shell
+../configure --prefix=/opt/riscv32 --with-arch=rv32imac --with-abi=ilp32
+```
+
+```shell
+make && make install
+```
+
+Run assemble script: (run on any path is okay)
+
+```shell
+./assemble.sh
+```

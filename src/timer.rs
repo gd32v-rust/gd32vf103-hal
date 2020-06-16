@@ -4,6 +4,7 @@ use crate::rcu::{Clocks, APB1};
 use crate::unit::Hertz;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::timer::CountDown;
+use core::convert::Infallible;
 
 // I'd prefer using Timer<TIMERx> for convenience
 /// Timer object
@@ -43,20 +44,23 @@ impl<TIMER> Timer<TIMER> {
 }
 
 impl<T: Into<u32>> DelayMs<T> for Timer<TIMER6> {
-    fn delay_ms(&mut self, ms: T) {
+    type Error = Infallible;
+    fn try_delay_ms(&mut self, ms: T) -> Result<(), Self::Error> {
         let count = (ms.into() * self.clock_frequency.0) / (self.clock_scaler as u32 * 1000);
         if count > u16::max_value() as u32 {
             panic!("can not delay that long");
         }
-        self.start(count as u16);
-        nb::block!(self.wait()).ok();
+        self.try_start(count as u16).ok();
+        nb::block!(self.try_wait()).ok();
+        Ok(())
     }
 }
 
 impl CountDown for Timer<TIMER6> {
+    type Error = Infallible;
     type Time = u16;
 
-    fn start<T>(&mut self, count: T)
+    fn try_start<T>(&mut self, count: T) -> Result<(), Self::Error>
     where
         T: Into<Self::Time>,
     {
@@ -71,10 +75,11 @@ impl CountDown for Timer<TIMER6> {
             self.timer.car.modify(|_, w| unsafe { w.carl().bits(c) });
             self.timer.ctl0.modify(|_, w| w.cen().set_bit());
         });
+        Ok(())
     }
 
     //TODO this signature changes in a future version, so we don'ot need the void crate.
-    fn wait(&mut self) -> nb::Result<(), void::Void> {
+    fn try_wait(&mut self) -> nb::Result<(), Self::Error> {
         let flag = self.timer.intf.read().upif().bit_is_set();
         if flag {
             Ok(())

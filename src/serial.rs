@@ -354,7 +354,7 @@ pub enum Error {
 impl<PINS> embedded_hal::serial::Read<u8> for Serial<USART0, PINS> {
     type Error = Error;
 
-    fn read(&mut self) -> nb::Result<u8, Self::Error> {
+    fn try_read(&mut self) -> nb::Result<u8, Self::Error> {
         let stat = self.usart.stat.read();
         // the chip has already filled data buffer with input data
         // check for errors present
@@ -396,7 +396,7 @@ impl<PINS> embedded_hal::serial::Read<u8> for Serial<USART0, PINS> {
 impl<PINS> embedded_hal::serial::Write<u8> for Serial<USART0, PINS> {
     type Error = core::convert::Infallible; // !
 
-    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+    fn try_write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
         let stat = self.usart.stat.read();
 
         if stat.tbe().bit_is_set() {
@@ -413,7 +413,7 @@ impl<PINS> embedded_hal::serial::Write<u8> for Serial<USART0, PINS> {
         }
     }
 
-    fn flush(&mut self) -> nb::Result<(), Self::Error> {
+    fn try_flush(&mut self) -> nb::Result<(), Self::Error> {
         // if translate completed, do not wait
         if self.usart.stat.read().tc().bit_is_set() {
             Ok(())
@@ -429,7 +429,7 @@ impl<PINS> core::fmt::Write for Serial<USART0, PINS> {
         use embedded_hal::serial::Write;
         s.as_bytes()
             .iter()
-            .try_for_each(|c| nb::block!(self.write(*c)))
+            .try_for_each(|c| nb::block!(self.try_write(*c)))
             .map_err(|_| core::fmt::Error) // no write error is possible
     }
 }

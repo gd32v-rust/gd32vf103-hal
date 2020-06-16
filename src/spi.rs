@@ -130,7 +130,7 @@ macro_rules! spi {
             impl<PINS> FullDuplex<u8> for Spi<$SPIX, PINS> {
                 type Error = Error;
 
-                fn read(&mut self) -> nb::Result<u8, Error> {
+                fn try_read(&mut self) -> nb::Result<u8, Error> {
                     if self.spi.stat.read().rbne().bit_is_clear() {
                         Err(nb::Error::WouldBlock)
                     } else {
@@ -139,7 +139,7 @@ macro_rules! spi {
                     }
                 }
 
-                fn send(&mut self, byte: u8) -> nb::Result<(), Error> {
+                fn try_send(&mut self, byte: u8) -> nb::Result<(), Error> {
                     if self.spi.stat.read().tbe().bit_is_clear() {
                         Err(nb::Error::WouldBlock)
                     } else {

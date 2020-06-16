@@ -65,24 +65,12 @@ pub mod wdog;
 
 /// Prelude
 pub mod prelude {
+    pub use embedded_hal::prelude::*;
     pub use crate::afio::AfioExt as _gd32vf103_hal_afio_AfioExt;
     pub use crate::gpio::GpioExt as _gd32vf103_hal_gpio_GpioExt;
     pub use crate::gpio::{Unlock as _gd32vf103_hal_gpio_Unlock, UpTo10MHz, UpTo2MHz, UpTo50MHz};
     pub use crate::rcu::RcuExt as _gd32vf103_hal_rcu_RcuExt;
     pub use crate::unit::U32Ext as _gd32vf103_hal_unit_U32Ext;
-    pub use embedded_hal::blocking::delay::DelayMs as _embedded_hal_blocking_delay_DelayMs;
-    pub use embedded_hal::digital::v2::{
-        InputPin as _embedded_hal_digital_v2_InputPin,
-        OutputPin as _embedded_hal_digital_v2_OutputPin,
-        StatefulOutputPin as _embedded_hal_digital_v2_StatefulOutputPin,
-        ToggleableOutputPin as _embedded_hal_digital_v2_ToggleableOutputPin,
-    };
-    pub use embedded_hal::serial::{
-        Read as _embedded_hal_serial_Read, Write as _embedded_hal_serial_Write,
-    };
-    pub use embedded_hal::watchdog::{
-        Watchdog as _embedded_hal_Watchdog, WatchdogEnable as _embedded_hal_WatchdogEnable,
-    };
 }
 
 mod atomic {
