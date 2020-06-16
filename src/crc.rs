@@ -38,7 +38,11 @@
 //! 
 //! ## Free data register `fdata`
 //! 
-//! // todo
+//! The `fdata` register provides you with additional 8-bit global storage. You may read 
+//! from or write to this register using function [`fdata_read`] and [`fdata_write`].
+//!
+//! [`fdata_read`]: fn.fdata_read.html
+//! [`fdata_write`]: fn.fdata_write.html
 //! 
 //! # Example
 //!
