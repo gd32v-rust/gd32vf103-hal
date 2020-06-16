@@ -78,7 +78,9 @@ impl CountDown for Timer<TIMER6> {
         Ok(())
     }
 
-    //TODO this signature changes in a future version, so we don'ot need the void crate.
+    // this signature changes in a future version, so we don'ot need the void crate.
+    // --- 
+    // changed to Self::Error, removing void (luojia65)
     fn try_wait(&mut self) -> nb::Result<(), Self::Error> {
         let flag = self.timer.intf.read().upif().bit_is_set();
         if flag {

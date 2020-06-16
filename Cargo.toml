@@ -24,10 +24,6 @@ embedded-hal = "1.0.0-alpha.1"
 nb = "0.1" # todo: remove when `embedded-hal` updated
 riscv = "0.5"
 
-[dependencies.void]
-default-features = false
-version = "1.0"
-
 [lib]
 name = "gd32vf103_hal"
 test = false
