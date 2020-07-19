@@ -4,7 +4,7 @@
 
 use crate::pac::{FWDGT, WWDGT};
 use crate::unit::MicroSeconds;
-use embedded_hal::watchdog::{Watchdog, Enable, Disable};
+use embedded_hal::watchdog::{Watchdog, Enable};
 use core::convert::Infallible;
 
 // Ref: Section 13.1.4
