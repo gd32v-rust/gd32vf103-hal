@@ -18,7 +18,7 @@ See also: [gd32vf103xx-hal](https://github.com/riscv-rust/gd32vf103xx-hal)
 To use this HAL project, you may need Rust installed. Checkout `rustup.rs` if you don't have one.
 You do not need to install GNU toolchain if you are an application developer.
 
-Examples may be found at [`gd32vf103-example`](https://github.com/gd32v-rust/gd32vf103-exmpale).
+Examples may be found at [`gd32vf103-example`](https://github.com/gd32v-rust/gd32vf103-example).
 
 ## Helps on assembling
 
