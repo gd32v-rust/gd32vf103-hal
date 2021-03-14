@@ -1,19 +1,19 @@
 [package]
 name = "gd32vf103-hal"
-version = "0.0.5"
+version = "0.0.6"
 categories = ["embedded", "hardware-support", "no-std"]
 repository = "https://github.com/luojia65/gd32vf103-hal"
 description = "Hardware abstract layer (HAL) for RISC-V microcontroller GD32VF103"
 documentation = "https://docs.rs/gd32vf103-hal"
 authors = ["luojia65 <me@luojia.cc>"]
 edition = "2018"
-license-file = "./LICENSE-MULAN"
+license = "MulanPSL-2.0"
 readme = "README.md"
 keywords = ["riscv", "gd32v", "hal", "embedded-hal"]
 build = "build.rs"
 
 [package.metadata.docs.rs]
-default-target = "riscv32imac-unknown-none-elf"
+targets = ["riscv32imac-unknown-none-elf"]
 
 [features]
 inline-asm = ["riscv/inline-asm"]
