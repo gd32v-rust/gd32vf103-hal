@@ -1,3 +1,5 @@
+#!/bin/bash
+
 cur_path=$(cd `dirname $0`; pwd)
 o_file=$cur_path/bin/riscv32imac-unknown-none-elf.o
 a_file=$cur_path/bin/riscv32imac-unknown-none-elf.a
@@ -19,7 +21,7 @@ You may install riscv32-unknown-elf-gcc with: ./configure --prefix=/opt/riscv32 
     exit
 fi
 
-$compiler $src_file -o $o_file -march=rv32imac -mabi=ilp32 -c -g
+$compiler $src_file -o $o_file -march=rv32imac -mabi=ilp32 -mno-relax -Wa,-mno-relax -c -g
 if [ "$?" != 0 ]; then
     exit
 fi
