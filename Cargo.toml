@@ -19,7 +19,7 @@ default-target = "riscv32imac-unknown-none-elf"
 inline-asm = ["riscv/inline-asm"]
 
 [dependencies]
-gd32vf103-pac = "0.3"
+gd32vf103-pac = "0.4"
 embedded-hal = "1.0.0-alpha.1"
 nb = "1" # todo: remove when `embedded-hal` updated
 riscv = "0.6"
