@@ -289,17 +289,17 @@ impl Strict {
     }
 
     /// Calculate and balance clock registers to configure into the given clock value.
-    /// If accurate value is not possible, this function panics. 
-    /// 
+    /// If accurate value is not possible, this function panics.
+    ///
     /// Be aware that Rust's panic is sometimes not obvious on embedded devices; if your
     /// program didn't execute as expected, or the `pc` is pointing to somewhere weird
-    /// (usually `abort: j abort`), it's likely that this function have panicked. 
+    /// (usually `abort: j abort`), it's likely that this function have panicked.
     /// Breakpoint on `rust_begin_unwind` may help debugging.
     ///
     /// # Panics
     ///
     /// If strictly accurate value of given `ck_sys` etc. is not reachable, this function
-    /// panics. 
+    /// panics.
     pub fn freeze(self, cfg: &mut CFG) -> Clocks {
         // todo: this function is much too complex; consider split into independent parts
         const IRC8M: u32 = 8_000_000;

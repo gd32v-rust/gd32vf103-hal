@@ -1,6 +1,6 @@
 //! (TODO) Backup register domain
 
-use crate::pac::{bkp, BKP, PMU};
+use crate::pac::{BKP, PMU};
 use crate::rcu::APB1;
 use core::marker::PhantomData;
 
@@ -163,15 +163,15 @@ impl Tamper {
             .modify(|_, w| w.ter().set_bit());
     }
 
-    /// Enable the tamper interrupt by setting the _Tamper interrupt enable 
+    /// Enable the tamper interrupt by setting the _Tamper interrupt enable
     /// (TPIE)_ register bit.
     pub fn enable_interrupt(&mut self) {
         unsafe { &*BKP::ptr() }
             .tpcs
             .modify(|_, w| w.tpie().set_bit());
     }
-    
-    /// Disable the tamper interrupt by clearing the _Tamper interrupt enable 
+
+    /// Disable the tamper interrupt by clearing the _Tamper interrupt enable
     /// (TPIE)_ register bit.
     pub fn disable_interrupt(&mut self) {
         unsafe { &*BKP::ptr() }

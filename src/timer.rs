@@ -2,9 +2,9 @@
 use crate::pac::TIMER6;
 use crate::rcu::{Clocks, APB1};
 use crate::unit::Hertz;
-use embedded_hal::blocking::delay::DelayMs;
-use embedded_hal::timer::CountDown;
 use core::convert::Infallible;
+use embedded_hal::delay::blocking::DelayUs;
+use embedded_hal::timer::nb::CountDown;
 
 // I'd prefer using Timer<TIMERx> for convenience
 /// Timer object
@@ -43,15 +43,26 @@ impl<TIMER> Timer<TIMER> {
     }
 }
 
-impl<T: Into<u32>> DelayMs<T> for Timer<TIMER6> {
+impl DelayUs for Timer<TIMER6> {
     type Error = Infallible;
-    fn try_delay_ms(&mut self, ms: T) -> Result<(), Self::Error> {
-        let count = (ms.into() * self.clock_frequency.0) / (self.clock_scaler as u32 * 1000);
+
+    fn delay_us(&mut self, us: u32) -> Result<(), Self::Error> {
+        let count = (us * self.clock_frequency.0) / (self.clock_scaler as u32 * 1000 * 1000);
         if count > u16::max_value() as u32 {
             panic!("can not delay that long");
         }
-        self.try_start(count as u16).ok();
-        nb::block!(self.try_wait()).ok();
+        self.start(count as u16).ok();
+        nb::block!(self.wait()).ok();
+        Ok(())
+    }
+
+    fn delay_ms(&mut self, ms: u32) -> Result<(), Self::Error> {
+        let count = (ms * self.clock_frequency.0) / (self.clock_scaler as u32 * 1000);
+        if count > u16::max_value() as u32 {
+            panic!("can not delay that long");
+        }
+        self.start(count as u16).ok();
+        nb::block!(self.wait()).ok();
         Ok(())
     }
 }
@@ -60,7 +71,7 @@ impl CountDown for Timer<TIMER6> {
     type Error = Infallible;
     type Time = u16;
 
-    fn try_start<T>(&mut self, count: T) -> Result<(), Self::Error>
+    fn start<T>(&mut self, count: T) -> Result<(), Self::Error>
     where
         T: Into<Self::Time>,
     {
@@ -79,9 +90,9 @@ impl CountDown for Timer<TIMER6> {
     }
 
     // this signature changes in a future version, so we don'ot need the void crate.
-    // --- 
+    // ---
     // changed to Self::Error, removing void (luojia65)
-    fn try_wait(&mut self) -> nb::Result<(), Self::Error> {
+    fn wait(&mut self) -> nb::Result<(), Self::Error> {
         let flag = self.timer.intf.read().upif().bit_is_set();
         if flag {
             Ok(())

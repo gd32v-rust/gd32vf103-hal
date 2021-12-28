@@ -4,6 +4,7 @@
 
 use crate::pac;
 use core::fmt::Write;
+use embedded_hal::serial::ErrorKind;
 use pac::{GPIOA, RCU, USART0};
 
 //TODO - use the APB/RCU/GPIO primitives in this crate, rather than unsafe memory poking!
@@ -203,7 +204,7 @@ impl Config {
         self.baudrate = baudrate;
         self
     }
-    
+
     pub fn parity(mut self, parity: Parity) -> Config {
         self.parity = parity;
         self
@@ -288,7 +289,10 @@ impl<PINS> Serial<USART0, PINS> {
             // use apb2 or apb1 may vary
             // round the value to get most accurate one (without float point)
             let baud_div = (clocks.ck_apb2().0 + config.baudrate.0 / 2) / config.baudrate.0;
-            assert!(baud_div >= 0x0010 && baud_div <= 0xFFFF, "impossible baudrate");
+            assert!(
+                baud_div >= 0x0010 && baud_div <= 0xFFFF,
+                "impossible baudrate"
+            );
             baud_div
         };
         // get parity config
@@ -305,9 +309,7 @@ impl<PINS> Serial<USART0, PINS> {
                 .modify(|_, w| w.usart0_remap().bit(PINS::REMAP == 1));
             // does not enable DMA in this section; DMA is enabled separately
             // set baudrate
-            usart0
-                .baud
-                .write(|w| unsafe { w.bits(baud_div) });
+            usart0.baud.write(|w| unsafe { w.bits(baud_div) });
             // configure stop bits
             usart0.ctl1.modify(|_, w| unsafe { w.stb().bits(stb) });
             usart0.ctl0.modify(|_, w| {
@@ -338,34 +340,21 @@ impl<PINS> Serial<USART0, PINS> {
     }
 }
 
-/// Serial error
-#[derive(Debug)]
-pub enum Error {
-    /// New data frame received while read buffer is not empty. (ORERR)
-    Overrun,
-    /// Noise detected on the RX pin when receiving a frame. (NERR)
-    Noise,
-    /// RX pin is detected low during the stop bits of a receive frame. (FERR)
-    Framing,
-    /// Parity bit of the receive frame does not match the expected parity value. (PERR)
-    Parity,
-}
+impl<PINS> embedded_hal::serial::nb::Read<u8> for Serial<USART0, PINS> {
+    type Error = embedded_hal::serial::ErrorKind;
 
-impl<PINS> embedded_hal::serial::Read<u8> for Serial<USART0, PINS> {
-    type Error = Error;
-
-    fn try_read(&mut self) -> nb::Result<u8, Self::Error> {
+    fn read(&mut self) -> nb::Result<u8, Self::Error> {
         let stat = self.usart.stat.read();
         // the chip has already filled data buffer with input data
         // check for errors present
         let err = if stat.orerr().bit_is_set() {
-            Some(Error::Overrun)
+            Some(ErrorKind::Overrun)
         } else if stat.nerr().bit_is_set() {
-            Some(Error::Noise)
+            Some(ErrorKind::Noise)
         } else if stat.ferr().bit_is_set() {
-            Some(Error::Framing)
+            Some(ErrorKind::FrameFormat)
         } else if stat.perr().bit_is_set() {
-            Some(Error::Parity)
+            Some(ErrorKind::Parity)
         } else {
             None
         };
@@ -393,10 +382,10 @@ impl<PINS> embedded_hal::serial::Read<u8> for Serial<USART0, PINS> {
     }
 }
 
-impl<PINS> embedded_hal::serial::Write<u8> for Serial<USART0, PINS> {
-    type Error = core::convert::Infallible; // !
+impl<PINS> embedded_hal::serial::nb::Write<u8> for Serial<USART0, PINS> {
+    type Error = embedded_hal::serial::ErrorKind; // !
 
-    fn try_write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
+    fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
         let stat = self.usart.stat.read();
 
         if stat.tbe().bit_is_set() {
@@ -413,7 +402,7 @@ impl<PINS> embedded_hal::serial::Write<u8> for Serial<USART0, PINS> {
         }
     }
 
-    fn try_flush(&mut self) -> nb::Result<(), Self::Error> {
+    fn flush(&mut self) -> nb::Result<(), Self::Error> {
         // if translate completed, do not wait
         if self.usart.stat.read().tc().bit_is_set() {
             Ok(())
@@ -426,11 +415,11 @@ impl<PINS> embedded_hal::serial::Write<u8> for Serial<USART0, PINS> {
 
 impl<PINS> core::fmt::Write for Serial<USART0, PINS> {
     fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        use embedded_hal::serial::Write;
-        s.as_bytes()
-            .iter()
-            .try_for_each(|c| nb::block!(self.try_write(*c)))
-            .map_err(|_| core::fmt::Error) // no write error is possible
+        use embedded_hal::serial::nb::Write;
+        s.as_bytes().iter().for_each(|c| {
+            nb::block!(self.write(*c)).unwrap();
+        });
+        Ok(())
     }
 }
 

@@ -4,8 +4,8 @@
 
 use crate::pac::{FWDGT, WWDGT};
 use crate::unit::MicroSeconds;
-use embedded_hal::watchdog::{Watchdog, Enable};
 use core::convert::Infallible;
+use embedded_hal::watchdog::blocking::{Enable, Watchdog};
 
 // Ref: Section 13.1.4
 const FWDGT_CMD_ENABLE: u16 = 0xCCCC;
@@ -47,7 +47,10 @@ pub struct Free<STATE> {
 impl<STATE> Free<STATE> {
     /// Wrap the watchdog
     pub fn new(fwdgt: FWDGT) -> Free<Disabled> {
-        Free { fwdgt, state: Disabled }
+        Free {
+            fwdgt,
+            state: Disabled,
+        }
     }
 
     /// Returns the interval in microseconds
@@ -122,7 +125,7 @@ impl Enable for Free<Disabled> {
     type Time = MicroSeconds;
     type Target = Free<Enabled>;
 
-    fn try_start<T>(self, period: T) -> Result<Free<Enabled>, Self::Error>
+    fn start<T>(self, period: T) -> Result<Free<Enabled>, Self::Error>
     where
         T: Into<Self::Time>,
     {
@@ -148,7 +151,10 @@ impl Enable for Free<Disabled> {
                 .write(|w| unsafe { w.cmd().bits(FWDGT_CMD_ENABLE) });
         });
         // Change typestate to `Enabled`
-        Ok(Free { fwdgt: self.fwdgt, state: Enabled })
+        Ok(Free {
+            fwdgt: self.fwdgt,
+            state: Enabled,
+        })
     }
 }
 
@@ -159,7 +165,7 @@ impl Enable for Free<Disabled> {
 impl Watchdog for Free<Enabled> {
     type Error = Infallible;
 
-    fn try_feed(&mut self) -> Result<(), Self::Error> {
+    fn feed(&mut self) -> Result<(), Self::Error> {
         // note(unsafe): write valid command constant defined in the Manual
         self.fwdgt
             .ctl
@@ -178,7 +184,7 @@ impl Watchdog for Free<Enabled> {
 //     type Error = Infallible;
 //     type Target = Free<Disabled>;
 
-//     fn try_disable(self) -> Result<Self::Target, Self::Error> {
+//     fn disable(self) -> Result<Self::Target, Self::Error> {
 //         // There should be probable DISABLE command
 //         // Change typestate to `Disabled`
 //         Ok(Free { fwdgt: self.fwdgt, state: Disabled })

@@ -9,7 +9,7 @@ const UNIQUE_ID: *const [u32; 3] = 0x1FFF_F7E8 as *const _;
 const MEMORY_DENSITY: *const u16 = 0x1FFF_F7E0 as *const _;
 
 /// Factory programed unique device id.
-/// 
+///
 /// This field if 96 bits wide. It may be only read using 32-bit load
 /// procedures.
 ///

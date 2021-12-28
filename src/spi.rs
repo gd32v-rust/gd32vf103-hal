@@ -5,8 +5,8 @@ use crate::gpio::{Alternate, Floating, Input, Output, PushPull};
 use crate::pac::{SPI0, SPI1, SPI2};
 use crate::rcu::{Clocks, APB1, APB2};
 use crate::unit::Hertz;
-use embedded_hal::blocking::spi::*;
-use embedded_hal::spi::{FullDuplex, Mode, Phase, Polarity};
+use embedded_hal::spi::nb::FullDuplex;
+use embedded_hal::spi::{Mode, Phase, Polarity};
 
 /// SPI error
 #[derive(Debug)]
@@ -128,9 +128,9 @@ macro_rules! spi {
             }
 
             impl<PINS> FullDuplex<u8> for Spi<$SPIX, PINS> {
-                type Error = Error;
+                type Error = embedded_hal::spi::ErrorKind;
 
-                fn try_read(&mut self) -> nb::Result<u8, Error> {
+                fn read(&mut self) -> nb::Result<u8, Self::Error> {
                     if self.spi.stat.read().rbne().bit_is_clear() {
                         Err(nb::Error::WouldBlock)
                     } else {
@@ -139,7 +139,7 @@ macro_rules! spi {
                     }
                 }
 
-                fn try_send(&mut self, byte: u8) -> nb::Result<(), Error> {
+                fn write(&mut self, byte: u8) -> nb::Result<(), Self::Error> {
                     if self.spi.stat.read().tbe().bit_is_clear() {
                         Err(nb::Error::WouldBlock)
                     } else {
@@ -153,8 +153,12 @@ macro_rules! spi {
                 }
             }
 
-            impl<PINS> transfer::Default<u8> for Spi<$SPIX, PINS> {}
-            impl<PINS> write::Default<u8> for Spi<$SPIX, PINS> {}
+            // impl<PINS> embedded_hal::spi::blocking::Transfer<u8> for Spi<$SPIX, PINS> {
+            //     type Error = embedded_hal::spi::ErrorKind;
+            // }
+            // impl<PINS> embedded_hal::spi::blocking::Write<u8> for Spi<$SPIX, PINS> {
+            //     type Error = embedded_hal::spi::ErrorKind;
+            // }
         )+
     }
 }
