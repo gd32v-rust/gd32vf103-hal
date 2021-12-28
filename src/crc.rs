@@ -35,15 +35,15 @@
 //! [`digest.finish()`]: struct.Digest.html#method.finish
 //! [`digest.free()`]: struct.Digest.html#method.free
 //! [`crc.release()`]: struct.Crc.html#method.release
-//! 
+//!
 //! ## Free data register `fdata`
-//! 
-//! The `fdata` register provides you with additional 8-bit global storage. You may read 
+//!
+//! The `fdata` register provides you with additional 8-bit global storage. You may read
 //! from or write to this register using function [`fdata_read`] and [`fdata_write`].
 //!
 //! [`fdata_read`]: fn.fdata_read.html
 //! [`fdata_write`]: fn.fdata_write.html
-//! 
+//!
 //! # Example
 //!
 //! This example is tested on GD32VF103C-START board. It calculated the CRC value of
@@ -108,17 +108,17 @@ pub struct Crc {
 
 impl Crc {
     /// Take ownership of CRC and enable CRC clock.
-    /// 
+    ///
     /// To create struct `Crc`, it's need to pass the peripheral `CRC` and a mutable
-    /// reference of `AHB` peripheral bus. Get the ownership of `CRC` from the device 
-    /// peripheral struct `pac::Peripherals` (may already exists in your code) as `dp` 
-    /// then use `dp.CRC`. To get AHB you need to constrain `RCU` module using 
+    /// reference of `AHB` peripheral bus. Get the ownership of `CRC` from the device
+    /// peripheral struct `pac::Peripherals` (may already exists in your code) as `dp`
+    /// then use `dp.CRC`. To get AHB you need to constrain `RCU` module using
     /// `dp.RCU.constrain()`, then use `&mut rcu.ahb` to get its mutable reference.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Basic usage:
-    /// 
+    ///
     /// ```no_run
     /// // Prepare CRC peripheral for calculation
     /// let crc = Crc::crc(dp.CRC, &mut rcu.ahb);
@@ -130,18 +130,18 @@ impl Crc {
     }
 
     /// Create new Digest struct for CRC calculation.
-    /// 
+    ///
     /// The underlying CRC buffer is cleaned to prepare for incoming values. Write
     /// operations could be later performed using functions in `Digest`. You may
     /// refer to [`digest.write_u32(value)`] for how to write the value for CRC
     /// calculation.
-    /// 
+    ///
     /// [`digest.write_u32(value)`]: struct.Digest.html#method.write_u32
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Basic usage:
-    /// 
+    ///
     /// ```no_run
     /// // Prepare CRC peripheral for calculation
     /// let crc = Crc::crc(dp.CRC, &mut rcu.ahb);
@@ -157,15 +157,15 @@ impl Crc {
     }
 
     /// Disable the CRC clock and release the peripheral.
-    /// 
+    ///
     /// The clock is switched off using AHB; you must provide a mutable referrence
     /// of AHB to release the CRC peripheral. After release, the peripheral is freed
     /// for further use.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Basic usage:
-    /// 
+    ///
     /// ```no_run
     /// // Prepare CRC peripheral for calculation
     /// let crc = Crc::crc(dp.CRC, &mut rcu.ahb);
@@ -181,29 +181,29 @@ impl Crc {
 }
 
 /// Digest struct for CRC calculation.
-/// 
+///
 /// This struct is created using [`Crc::new_digest`] function. Use [`write_u32`]
 /// function to write data for calculation; use [`finish`] to read the result.
 /// After calculation, use [`free`] to get the Crc wrapper back.
-/// 
+///
 /// [`Crc::new_digest`]: ./struct.Crc.html#method.new_digest
 /// [`write_u32`]: #method.write_u32
 /// [`finish`]: #method.finish
 /// [`free`]: #method.free
-/// 
+///
 /// # Examples
-/// 
+///
 /// Calculate CRC result of single value:
-/// 
+///
 /// ```no_run
 /// // Write a single value
 /// digest.write_u32(0x12345678);
 /// // Read its CRC calculation result
 /// let ans = digest.finish();
 /// ```
-/// 
+///
 /// Calculate CRC reuslt of an array of values:
-/// 
+///
 /// ```no_run
 /// // Write all values of an array
 /// for value in array {
@@ -218,24 +218,24 @@ pub struct Digest {
 
 impl Digest {
     /// Writes a single u32 into this hasher.
-    /// 
-    /// Multiple u32 values may be written one by one using this function. 
-    /// After all values written for calculation, you may read the CRC result 
+    ///
+    /// Multiple u32 values may be written one by one using this function.
+    /// After all values written for calculation, you may read the CRC result
     /// using function [`finish`].
-    /// 
+    ///
     /// [`finish`]: #method.finish
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Write a single value:
-    /// 
+    ///
     /// ```no_run
     /// // Write a single value
     /// digest.write_u32(0x12345678);
     /// ```
-    /// 
+    ///
     /// Write an array of values:
-    /// 
+    ///
     /// ```no_run
     /// // Write all values of an array
     /// for value in array {
@@ -248,20 +248,20 @@ impl Digest {
     }
 
     /// Returns the hash value for the values written so far.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Get CRC reuslt of a single value:
-    /// 
+    ///
     /// ```no_run
     /// // Write a single value
     /// digest.write_u32(0x12345678);
     /// // Read its CRC calculation result
     /// let ans = digest.finish();
     /// ```
-    /// 
+    ///
     /// Get CRC reuslt of an array of values:
-    /// 
+    ///
     /// ```no_run
     /// // Write all values of an array
     /// for value in array {
@@ -276,11 +276,11 @@ impl Digest {
     }
 
     /// Frees the Digest struct to return the underlying Crc peripheral.
-    /// 
+    ///
     /// # Examples
-    /// 
+    ///
     /// Basic usage:
-    /// 
+    ///
     /// ```no_run
     /// // Calculate CRC of a single value
     /// digest.write_u32(0x12345678);

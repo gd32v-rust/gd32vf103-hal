@@ -65,7 +65,6 @@ pub mod wdog;
 
 /// Prelude
 pub mod prelude {
-    pub use embedded_hal::prelude::*;
     pub use crate::afio::AfioExt as _gd32vf103_hal_afio_AfioExt;
     pub use crate::gpio::GpioExt as _gd32vf103_hal_gpio_GpioExt;
     pub use crate::gpio::{Unlock as _gd32vf103_hal_gpio_Unlock, UpTo10MHz, UpTo2MHz, UpTo50MHz};
